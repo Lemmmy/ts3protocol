@@ -1,8 +1,10 @@
 package pw.lemmmy.ts3protocol.utils;
 
 import org.apache.commons.codec.binary.Hex;
-import org.bouncycastle.asn1.*;
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.macs.CMac;
@@ -13,14 +15,10 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 
-import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.security.*;
 
@@ -71,5 +69,23 @@ public class CryptoUtils {
 		cipher.doFinal(enc, len);
 		
 		return new byte[][] { cipher.getMac(), enc };
+	}
+	
+	public static byte[] eaxDecrypt(byte[] key, byte[] nonce, byte[] header, byte[] data, byte[] mac) {
+		EAXBlockCipher cipher = new EAXBlockCipher(new AESEngine());
+		cipher.init(false, new AEADParameters(new KeyParameter(key), 8 * 8, nonce, header));
+		
+		byte[] dec = new byte[cipher.getOutputSize(data.length + mac.length)];
+		
+		try {
+			int len = cipher.processBytes(data, 0, data.length, dec, 0);
+			cipher.processBytes(mac, 0, mac.length, dec, 0);
+			cipher.doFinal(dec, len);
+		} catch (InvalidCipherTextException e) {
+			System.err.println("Failed to decrypt data - MAC check failed or data was invalid:");
+			e.printStackTrace();
+		}
+		
+		return dec;
 	}
 }

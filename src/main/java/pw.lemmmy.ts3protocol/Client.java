@@ -72,10 +72,13 @@ public class Client implements Runnable {
 	}
 	
 	private void send(Packet packet) {
+		packet.setDirection(PacketDirection.CLIENT_TO_SERVER);
 		Arrays.stream(packet.write()).forEach(this::sendLowLevel);
 	}
 	
 	private void sendLowLevel(LowLevelPacket packet) {
+		packet.setDirection(PacketDirection.CLIENT_TO_SERVER);
+		
 		try (
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream dos = new DataOutputStream(bos)
@@ -89,6 +92,8 @@ public class Client implements Runnable {
 	}
 	
 	private void receiveLowLevel(LowLevelPacket packet) {
+		packet.setDirection(PacketDirection.SERVER_TO_CLIENT);
+		
 		byte[] data = new byte[LowLevelPacket.PACKET_SIZE];
 		DatagramPacket dp = new DatagramPacket(data, data.length);
 		
@@ -97,7 +102,7 @@ public class Client implements Runnable {
 			DataInputStream dis = new DataInputStream(bis)
 		) {
 			socket.receive(dp);
-			packet.read(dis);
+			packet.read(dis, dp.getLength());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -118,6 +123,7 @@ public class Client implements Runnable {
 		
 		while (true) {
 			LowLevelPacket packet = new LowLevelPacket();
+			packet.setDirection(PacketDirection.SERVER_TO_CLIENT);
 			receiveLowLevel(packet);
 			
 			// start of fragmented packet set

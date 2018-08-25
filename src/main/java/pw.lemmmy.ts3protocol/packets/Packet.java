@@ -3,6 +3,7 @@ package pw.lemmmy.ts3protocol.packets;
 import lombok.Getter;
 import lombok.Setter;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.util.encoders.Hex;
 import pw.lemmmy.ts3protocol.utils.CryptoUtils;
 import pw.lemmmy.ts3protocol.utils.QuickLZ;
 
@@ -15,6 +16,7 @@ import java.io.IOException;
 public class Packet {
 	private static final int FRAGMENTED_DATA_SIZE = LowLevelPacket.PACKET_SIZE - 13;
 	
+	protected PacketDirection direction;
 	protected byte[][] macs;
 	protected short[] packetIDs, clientIDs;
 	protected PacketType packetType;
@@ -24,7 +26,6 @@ public class Packet {
 	public void read(LowLevelPacket[] packets) throws IOException {
 		macs = new byte[packets.length][];
 		packetIDs = new short[packets.length];
-		clientIDs = new short[packets.length];
 		
 		unencrypted = packets[0].unencrypted;
 		compressed = packets[0].compressed;
@@ -36,22 +37,41 @@ public class Packet {
 				
 				macs[i] = packet.mac;
 				packetIDs[i] = packet.packetID;
-				clientIDs[i] = packet.clientID;
 				
 				// TODO: generation counters
 				
 				if (unencrypted) {
 					bos.write(packet.data);
 				} else {
-				
+					// TODO: non-fake decrypt after IV stuff
+					try (
+						ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(5);
+						DataOutputStream headerDOS = new DataOutputStream(headerBOS)
+					) {
+						packet.writeMeta(headerDOS);
+						headerDOS.flush();
+						
+						byte[] decrypted = CryptoUtils.eaxDecrypt(
+							CryptoUtils.FAKE_EAX_KEY,
+							CryptoUtils.FAKE_EAX_NONCE,
+							headerBOS.toByteArray(),
+							packet.data,
+							packet.mac
+						);
+						
+						System.out.println("decrypted: " + Hex.toHexString(decrypted));
+						
+						bos.write(decrypted);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}
 			}
+			bos.flush();
 			data = bos.toByteArray();
 		}
 		
 		if (compressed) decompress();
-		
-		// TODO: deal with encryption and compression
 	}
 	
 	protected void writeData(DataOutputStream os) throws IOException {}

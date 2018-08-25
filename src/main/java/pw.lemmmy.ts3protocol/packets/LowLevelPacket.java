@@ -2,6 +2,7 @@ package pw.lemmmy.ts3protocol.packets;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -14,6 +15,7 @@ public class LowLevelPacket {
 	public static final int PACKET_SIZE = 500;
 	public static final byte[] HANDSHAKE_MAC = { 0x54, 0x53, 0x33, 0x49, 0x4E, 0x49, 0x54, 0x31 };
 	
+	protected PacketDirection direction;
 	protected byte[] mac;
 	protected short packetID, clientID;
 	protected PacketType packetType;
@@ -35,7 +37,11 @@ public class LowLevelPacket {
 	
 	public void writeMeta(DataOutputStream os) throws IOException {
 		/* Packet ID */ os.writeShort(packetID);
-		/* Client ID */ os.writeShort(clientID);
+		
+		if (direction == PacketDirection.CLIENT_TO_SERVER) {
+			/* Client ID */
+			os.writeShort(clientID);
+		}
 		
 		/* Packet Type + Flags */
 		writePacketByte(os);
@@ -51,7 +57,7 @@ public class LowLevelPacket {
 		os.write(data);
 	}
 	
-	public void read(DataInputStream is) throws IOException {
+	public void read(DataInputStream is, int length) throws IOException {
 		/* MAC */
 		mac = new byte[8];
 		is.read(mac);
@@ -70,10 +76,11 @@ public class LowLevelPacket {
 		packetType = PacketType.values()[packetTypeByte & 0xF];
 		
 		/* Data */
-		readData(is, PACKET_SIZE - 11);
+		readData(is, length - 11);
 	}
 	
 	protected void readData(DataInputStream is, int length) throws IOException {
+		if (data == null) data = new byte[length];
 		is.readFully(data, 0, length);
 	}
 }

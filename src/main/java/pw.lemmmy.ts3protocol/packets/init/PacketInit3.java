@@ -1,6 +1,7 @@
 package pw.lemmmy.ts3protocol.packets.init;
 
 import lombok.Getter;
+import pw.lemmmy.ts3protocol.packets.PacketDirection;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -12,6 +13,10 @@ public class PacketInit3 extends PacketInit {
 	
 	private byte[] x = new byte[64], n = new byte[64];
 	private int level;
+	
+	{
+		direction = PacketDirection.SERVER_TO_CLIENT;
+	}
 	
 	public PacketInit3(byte[] serverBytes) {
 		this.serverBytes = serverBytes;

@@ -1,5 +1,7 @@
 package pw.lemmmy.ts3protocol.packets.init;
 
+import pw.lemmmy.ts3protocol.packets.PacketDirection;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 
@@ -8,6 +10,7 @@ public class PacketInit2 extends PacketInit {
 	
 	{
 		step = 2;
+		direction = PacketDirection.CLIENT_TO_SERVER;
 	}
 	
 	public PacketInit2(byte[] randomBytes, byte[] serverBytes) {

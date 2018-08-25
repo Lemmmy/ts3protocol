@@ -2,6 +2,7 @@ package pw.lemmmy.ts3protocol.packets.init;
 
 import org.apache.commons.codec.Charsets;
 import pw.lemmmy.ts3protocol.commands.CommandClientInitIV;
+import pw.lemmmy.ts3protocol.packets.PacketDirection;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -15,6 +16,7 @@ public class PacketInit4 extends PacketInit {
 	
 	{
 		step = 4;
+		direction = PacketDirection.CLIENT_TO_SERVER;
 	}
 	
 	public PacketInit4(byte[] x, byte[] n, int level, byte[] serverBytes, CommandClientInitIV initiv) {
