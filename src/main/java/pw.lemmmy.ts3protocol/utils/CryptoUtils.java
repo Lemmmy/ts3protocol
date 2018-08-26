@@ -73,7 +73,7 @@ public class CryptoUtils {
 	
 	public static byte[] eaxDecrypt(byte[] key, byte[] nonce, byte[] header, byte[] data, byte[] mac) {
 		EAXBlockCipher cipher = new EAXBlockCipher(new AESEngine());
-		cipher.init(false, new AEADParameters(new KeyParameter(key), 8 * 8, nonce, header));
+		cipher.init(false, new AEADParameters(new KeyParameter(key), mac.length * 8, nonce, header));
 		
 		byte[] dec = new byte[cipher.getOutputSize(data.length + mac.length)];
 		
