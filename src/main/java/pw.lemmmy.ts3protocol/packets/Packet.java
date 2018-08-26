@@ -8,9 +8,7 @@ import pw.lemmmy.ts3protocol.Client;
 import pw.lemmmy.ts3protocol.utils.CryptoUtils;
 import pw.lemmmy.ts3protocol.utils.QuickLZ;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
@@ -74,14 +72,25 @@ public class Packet {
 		}
 		
 		if (compressed) data = QuickLZ.decompress(data);
+		
+		try (
+			ByteArrayInputStream bis = new ByteArrayInputStream(data);
+			DataInputStream dis = new DataInputStream(bis)
+		) {
+			readData(client, dis);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
+	
+	protected void readData(Client client, DataInputStream dis) throws IOException {}
 	
 	public LowLevelPacket[] write(Client client) {
 		try (
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream dos = new DataOutputStream(bos)
 		) {
-			writeData(dos);
+			writeData(client, dos);
 			dos.flush();
 			data = bos.toByteArray();
 		} catch (IOException e) {
@@ -151,5 +160,5 @@ public class Packet {
 		return packets;
 	}
 	
-	protected void writeData(DataOutputStream os) throws IOException {}
+	protected void writeData(Client client, DataOutputStream os) throws IOException {}
 }

@@ -1,7 +1,9 @@
 package pw.lemmmy.ts3protocol;
 
 import lombok.Getter;
+import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.commands.CommandClientInitIV;
+import pw.lemmmy.ts3protocol.commands.CommandListener;
 import pw.lemmmy.ts3protocol.packets.*;
 import pw.lemmmy.ts3protocol.packets.init.*;
 import pw.lemmmy.ts3protocol.utils.CryptoUtils;
@@ -15,9 +17,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
@@ -37,6 +37,8 @@ public class Client implements Runnable {
 	// temporary key/nonce until the handshake is complete
 	private byte[] eaxKey = CryptoUtils.FAKE_EAX_KEY;
 	private byte[] eaxNonce = CryptoUtils.FAKE_EAX_NONCE;
+	
+	private Map<Class<? extends Command>, Set<CommandListener>> commandListeners;
 	
 	public Client(InetAddress host) throws SocketException {
 		this(host, DEFAULT_PORT);
@@ -78,6 +80,19 @@ public class Client implements Runnable {
 		System.out.println("High-level init packet sent");
 	}
 	
+	public void addCommandListener(Class<? extends Command> commandClass, CommandListener listener) {
+		if (!commandListeners.containsKey(commandClass)) {
+			commandListeners.put(commandClass, new HashSet<>());
+		}
+		
+		commandListeners.get(commandClass).add(listener);
+	}
+	
+	public void handleCommand(Command command) {
+		if (!commandListeners.containsKey(command.getClass())) return;
+		commandListeners.get(command.getClass()).forEach(l -> l.handle(command));
+	}
+	
 	private void readLoop() throws IOException {
 		List<LowLevelPacket> packets = new ArrayList<>();
 		boolean fragmented = false;
@@ -96,12 +111,13 @@ public class Client implements Runnable {
 			if (!fragmented || packet.isFragmented()) {
 				PacketType type = packets.get(0).getPacketType();
 				
-				Packet hlPacket = getPacketFromType(type);
-				if (hlPacket == null) {
-					System.err.println("Don't know how to handle packet type " + type.name());
-				} else {
+				Optional<Packet> hlPacketOpt = getPacketFromType(type);
+				if (hlPacketOpt.isPresent()) {
+					Packet hlPacket = hlPacketOpt.get();
 					System.out.println("Reading packet " + type.name());
 					hlPacket.read(this, packets.toArray(new LowLevelPacket[0]));
+				} else {
+					System.err.println("Don't know how to handle packet type " + type.name());
 				}
 				
 				packets.clear();
@@ -146,13 +162,13 @@ public class Client implements Runnable {
 		}
 	}
 	
-	private Packet getPacketFromType(PacketType type) {
+	private Optional<Packet> getPacketFromType(PacketType type) {
 		switch (type) {
 			case COMMAND:
-				return new PacketCommand();
+				return Optional.of(new PacketCommand());
+			default:
+				return Optional.empty();
 		}
-		
-		return null;
 	}
 	
 	@Override

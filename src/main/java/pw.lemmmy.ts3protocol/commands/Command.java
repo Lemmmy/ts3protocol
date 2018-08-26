@@ -32,7 +32,7 @@ public abstract class Command {
 			String arg = args[i];
 			String[] parts = arg.split("=", 2);
 			
-			arguments.put(parts[0], parts[1]);
+			arguments.put(parts[0], decodeValue(parts[1]));
 		}
 	}
 	
