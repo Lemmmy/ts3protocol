@@ -1,22 +1,24 @@
 package pw.lemmmy.ts3protocol.utils;
 
 import org.apache.commons.codec.binary.Hex;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECPublicKeySpec;
+import org.bouncycastle.math.ec.ECPoint;
 
 import java.math.BigInteger;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 
 import static pw.lemmmy.ts3protocol.packets.LowLevelPacket.MAC_SIZE;
 
@@ -30,6 +32,9 @@ public class CryptoUtils {
 	public static final byte[] HANDSHAKE_MAC = { 0x54, 0x53, 0x33, 0x49, 0x4E, 0x49, 0x54, 0x31 };
 	
 	public static final ECNamedCurveParameterSpec PRIME256_V1 = ECNamedCurveTable.getParameterSpec("prime256v1");
+	public static final ECDomainParameters PRIME256_V1_DOMAIN = new ECDomainParameters(
+		PRIME256_V1.getCurve(), PRIME256_V1.getG(), PRIME256_V1.getN(), PRIME256_V1.getH()
+	);
 	public static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
 	
 	public static KeyPair generateECDHKeypair() throws NoSuchAlgorithmException,
@@ -44,7 +49,7 @@ public class CryptoUtils {
 		return keyPair;
 	}
 	
-	public static DERSequence toTomcrypt(KeyPair kp) {
+	public static DERSequence toDERASN1(KeyPair kp) {
 		ECPublicKey pubKey = (ECPublicKey) kp.getPublic();
 		
 		BigInteger x = pubKey.getQ().getAffineXCoord().toBigInteger();
@@ -56,6 +61,32 @@ public class CryptoUtils {
 			new ASN1Integer(x),
 			new ASN1Integer(y)
 		});
+	}
+	
+	public static ECPublicKey fromDERASN1(ASN1Sequence seq) throws InvalidKeySpecException {
+		KeyFactory factory;
+		try {
+			factory = KeyFactory.getInstance("ECDH", PROVIDER);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+		ASN1Integer x = (ASN1Integer) seq.getObjectAt(2);
+		ASN1Integer y = (ASN1Integer) seq.getObjectAt(3);
+		
+		ECPoint point = PRIME256_V1.getCurve().createPoint(x.getValue(), y.getValue());
+		ECPublicKeySpec key = new ECPublicKeySpec(point, PRIME256_V1);
+		return (ECPublicKey) factory.generatePublic(key);
+	}
+	
+	public static boolean verifyECDSA(ECPublicKey key, byte[] message, byte[] proof) throws NoSuchAlgorithmException,
+																							InvalidKeyException,
+																							SignatureException {
+		Signature signature = Signature.getInstance("SHA256withECDSA", CryptoUtils.PROVIDER);
+		signature.initVerify(key);
+		signature.update(message);
+		return signature.verify(proof);
 	}
 	
 	public static byte[][] eaxEncrypt(byte[] key, byte[] nonce, byte[] header, byte[] data) throws

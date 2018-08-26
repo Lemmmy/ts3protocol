@@ -31,7 +31,7 @@ public class PacketCommand extends Packet {
 	
 	@Override
 	protected void readData(Client client, DataInputStream dis) {
-		String data = new String(Base64.decode(this.data), Charsets.UTF_8); // TODO: ASCII or UTF-8?
+		String data = new String(this.data, Charsets.UTF_8); // TODO: ASCII or UTF-8?
 		
 		String[] args = data.split(" ");
 		String commandName = args[0];
@@ -42,6 +42,7 @@ public class PacketCommand extends Packet {
 			System.err.println("Don't know how to handle command " + commandName);
 		} else {
 			command.decode(args);
+			client.handleCommand(command);
 		}
 	}
 }

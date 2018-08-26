@@ -1,8 +1,13 @@
 package pw.lemmmy.ts3protocol;
 
 import lombok.Getter;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
+import org.bouncycastle.util.encoders.Base64;
 import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.commands.CommandClientInitIV;
+import pw.lemmmy.ts3protocol.commands.CommandInitIVExpand2;
 import pw.lemmmy.ts3protocol.commands.CommandListener;
 import pw.lemmmy.ts3protocol.packets.*;
 import pw.lemmmy.ts3protocol.packets.init.*;
@@ -13,10 +18,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
@@ -38,7 +41,7 @@ public class Client implements Runnable {
 	private byte[] eaxKey = CryptoUtils.FAKE_EAX_KEY;
 	private byte[] eaxNonce = CryptoUtils.FAKE_EAX_NONCE;
 	
-	private Map<Class<? extends Command>, Set<CommandListener>> commandListeners;
+	private Map<Class<? extends Command>, Set<CommandListener>> commandListeners = new HashMap<>();
 	
 	public Client(InetAddress host) throws SocketException {
 		this(host, DEFAULT_PORT);
@@ -56,6 +59,21 @@ public class Client implements Runnable {
 		} catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
 			e.printStackTrace();
 		}
+		
+		addCommandListener(CommandInitIVExpand2.class, this::handleInitIVExpand2);
+	}
+	
+	private void handleInitIVExpand2(CommandInitIVExpand2 initIVExpand2) throws IOException, InvalidKeySpecException,
+																				SignatureException,
+																				InvalidKeyException,
+																				NoSuchAlgorithmException {
+		byte[] licence = Base64.decode(initIVExpand2.getArguments().get("l"));
+		byte[] randomBytes = Base64.decode(initIVExpand2.getArguments().get("beta"));
+		byte[] omega = Base64.decode(initIVExpand2.getArguments().get("omega"));
+		byte[] proof = Base64.decode(initIVExpand2.getArguments().get("proof"));
+		
+		ECPublicKey publicKey = CryptoUtils.fromDERASN1((ASN1Sequence) DERSequence.fromByteArray(omega));
+		if (!CryptoUtils.verifyECDSA(publicKey, licence, proof)) throw new RuntimeException("Licence verification failed");
 	}
 	
 	private void handshake() {
@@ -80,7 +98,7 @@ public class Client implements Runnable {
 		System.out.println("High-level init packet sent");
 	}
 	
-	public void addCommandListener(Class<? extends Command> commandClass, CommandListener listener) {
+	public <T extends Command> void addCommandListener(Class<T> commandClass, CommandListener<T> listener) {
 		if (!commandListeners.containsKey(commandClass)) {
 			commandListeners.put(commandClass, new HashSet<>());
 		}
@@ -90,7 +108,14 @@ public class Client implements Runnable {
 	
 	public void handleCommand(Command command) {
 		if (!commandListeners.containsKey(command.getClass())) return;
-		commandListeners.get(command.getClass()).forEach(l -> l.handle(command));
+		commandListeners.get(command.getClass()).forEach(l -> {
+			try {
+				l.handle(command);
+			} catch (Exception e) {
+				System.err.println("Error in command handler for " + command.getName());
+				e.printStackTrace();
+			}
+		});
 	}
 	
 	private void readLoop() throws IOException {

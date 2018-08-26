@@ -25,7 +25,7 @@ public class CommandClientInitIV extends Command {
 	public void populateArguments() {
 		arguments.put("alpha", Base64.toBase64String(alpha));
 		try {
-			arguments.put("omega", Base64.toBase64String(CryptoUtils.toTomcrypt(keyPair).getEncoded()));
+			arguments.put("omega", Base64.toBase64String(CryptoUtils.toDERASN1(keyPair).getEncoded()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
