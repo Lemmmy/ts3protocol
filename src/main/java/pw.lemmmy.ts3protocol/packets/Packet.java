@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.util.encoders.Hex;
+import pw.lemmmy.ts3protocol.Client;
 import pw.lemmmy.ts3protocol.utils.CryptoUtils;
 import pw.lemmmy.ts3protocol.utils.QuickLZ;
 
@@ -11,11 +12,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
+import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
+
 @Getter
 @Setter
 public class Packet {
-	private static final int FRAGMENTED_DATA_SIZE = LowLevelPacket.PACKET_SIZE - 13;
-	
 	protected PacketDirection direction;
 	protected byte[][] macs;
 	protected short[] packetIDs, clientIDs;
@@ -23,7 +25,7 @@ public class Packet {
 	protected boolean unencrypted = true, compressed, newProtocol;
 	protected byte[] data;
 	
-	public void read(LowLevelPacket[] packets) throws IOException {
+	public void read(Client client, LowLevelPacket[] packets) throws IOException {
 		macs = new byte[packets.length][];
 		packetIDs = new short[packets.length];
 		
@@ -45,15 +47,15 @@ public class Packet {
 				} else {
 					// TODO: non-fake decrypt after IV stuff
 					try (
-						ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(5);
+						ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(SERVER_TO_CLIENT.getMetaSize());
 						DataOutputStream headerDOS = new DataOutputStream(headerBOS)
 					) {
 						packet.writeMeta(headerDOS);
 						headerDOS.flush();
 						
 						byte[] decrypted = CryptoUtils.eaxDecrypt(
-							CryptoUtils.FAKE_EAX_KEY,
-							CryptoUtils.FAKE_EAX_NONCE,
+							client.getEaxKey(),
+							client.getEaxNonce(),
 							headerBOS.toByteArray(),
 							packet.data,
 							packet.mac
@@ -71,12 +73,10 @@ public class Packet {
 			data = bos.toByteArray();
 		}
 		
-		if (compressed) decompress();
+		if (compressed) data = QuickLZ.decompress(data);
 	}
 	
-	protected void writeData(DataOutputStream os) throws IOException {}
-	
-	public LowLevelPacket[] write() {
+	public LowLevelPacket[] write(Client client) {
 		try (
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream dos = new DataOutputStream(bos)
@@ -90,7 +90,8 @@ public class Packet {
 		
 		byte[] compressedData = compressed ? QuickLZ.compress(data, 1) : data;
 		
-		int packetCount = (int) Math.ceil((float) compressedData.length / (float) FRAGMENTED_DATA_SIZE);
+		int fragmentedDataSize = LowLevelPacket.PACKET_SIZE - CLIENT_TO_SERVER.getHeaderSize();
+		int packetCount = (int) Math.ceil((float) compressedData.length / (float) fragmentedDataSize);
 		boolean fragmented = packetCount > 1;
 		LowLevelPacket[] packets = new LowLevelPacket[packetCount];
 		
@@ -109,19 +110,19 @@ public class Packet {
 				packet.midFragmented = true;
 			}
 			
-			packet.data = new byte[FRAGMENTED_DATA_SIZE];
+			packet.data = new byte[fragmentedDataSize];
 			System.arraycopy(
-				compressedData, i * FRAGMENTED_DATA_SIZE,
+				compressedData, i * fragmentedDataSize,
 				packet.data, 0,
-				i == packetCount - 1 ? compressedData.length % FRAGMENTED_DATA_SIZE : FRAGMENTED_DATA_SIZE
+				i == packetCount - 1 ? compressedData.length % fragmentedDataSize : fragmentedDataSize
 			);
 			
 			if (!unencrypted) {
 				// TODO: non-fake encrypt after IV stuff
 				try (
-					ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(5);
+					ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(CLIENT_TO_SERVER.getMetaSize());
 					DataOutputStream headerDOS = new DataOutputStream(headerBOS);
-					ByteArrayOutputStream dataBOS = new ByteArrayOutputStream(FRAGMENTED_DATA_SIZE);
+					ByteArrayOutputStream dataBOS = new ByteArrayOutputStream(fragmentedDataSize);
 					DataOutputStream dataDOS = new DataOutputStream(dataBOS)
 				) {
 					packet.writeMeta(headerDOS);
@@ -131,8 +132,8 @@ public class Packet {
 					dataDOS.flush();
 					
 					byte[][] encrypted = CryptoUtils.eaxEncrypt(
-						CryptoUtils.FAKE_EAX_KEY,
-						CryptoUtils.FAKE_EAX_NONCE,
+						client.getEaxKey(),
+						client.getEaxNonce(),
 						headerBOS.toByteArray(),
 						dataBOS.toByteArray()
 					);
@@ -150,7 +151,5 @@ public class Packet {
 		return packets;
 	}
 	
-	private void decompress() {
-		data = QuickLZ.decompress(data);
-	}
+	protected void writeData(DataOutputStream os) throws IOException {}
 }

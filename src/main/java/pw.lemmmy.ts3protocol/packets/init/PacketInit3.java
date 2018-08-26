@@ -5,7 +5,6 @@ import pw.lemmmy.ts3protocol.packets.PacketDirection;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 
 @Getter
 public class PacketInit3 extends PacketInit {

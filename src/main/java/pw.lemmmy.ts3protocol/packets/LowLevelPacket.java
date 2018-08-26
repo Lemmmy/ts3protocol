@@ -2,18 +2,20 @@ package pw.lemmmy.ts3protocol.packets;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.BitSet;
 
+import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
+import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
+
 @Getter
 @Setter
 public class LowLevelPacket {
 	public static final int PACKET_SIZE = 500;
-	public static final byte[] HANDSHAKE_MAC = { 0x54, 0x53, 0x33, 0x49, 0x4E, 0x49, 0x54, 0x31 };
+	public static final int MAC_SIZE = 8;
 	
 	protected PacketDirection direction;
 	protected byte[] mac;
@@ -21,41 +23,6 @@ public class LowLevelPacket {
 	protected PacketType packetType;
 	protected boolean unencrypted = true, compressed, newProtocol, fragmented, midFragmented;
 	protected byte[] data;
-	
-	public void writePacketByte(DataOutputStream os) throws IOException {
-		BitSet pt = BitSet.valueOf(new byte[]{(byte) packetType.ordinal()});
-		
-		if (!midFragmented) {
-			pt.set(7, unencrypted);
-			pt.set(6, compressed);
-			pt.set(5, newProtocol);
-			pt.set(4, fragmented);
-		}
-		
-		os.write(pt.toByteArray());
-	}
-	
-	public void writeMeta(DataOutputStream os) throws IOException {
-		/* Packet ID */ os.writeShort(packetID);
-		
-		if (direction == PacketDirection.CLIENT_TO_SERVER) {
-			/* Client ID */
-			os.writeShort(clientID);
-		}
-		
-		/* Packet Type + Flags */
-		writePacketByte(os);
-	}
-	
-	public void write(DataOutputStream os) throws IOException {
-		os.write(mac);
-		writeMeta(os);
-		writeData(os);
-	}
-	
-	protected void writeData(DataOutputStream os) throws IOException {
-		os.write(data);
-	}
 	
 	public void read(DataInputStream is, int length) throws IOException {
 		/* MAC */
@@ -76,11 +43,46 @@ public class LowLevelPacket {
 		packetType = PacketType.values()[packetTypeByte & 0xF];
 		
 		/* Data */
-		readData(is, length - 11);
+		readData(is, length - SERVER_TO_CLIENT.getHeaderSize());
 	}
 	
 	protected void readData(DataInputStream is, int length) throws IOException {
 		if (data == null) data = new byte[length];
 		is.readFully(data, 0, length);
+	}
+	
+	public void write(DataOutputStream os) throws IOException {
+		os.write(mac);
+		writeMeta(os);
+		writeData(os);
+	}
+	
+	public void writeMeta(DataOutputStream os) throws IOException {
+		/* Packet ID */ os.writeShort(packetID);
+		
+		if (direction == CLIENT_TO_SERVER) {
+			/* Client ID */
+			os.writeShort(clientID);
+		}
+		
+		/* Packet Type + Flags */
+		writePacketByte(os);
+	}
+	
+	public void writePacketByte(DataOutputStream os) throws IOException {
+		BitSet pt = BitSet.valueOf(new byte[]{ (byte) packetType.ordinal() });
+		
+		if (!midFragmented) {
+			pt.set(7, unencrypted);
+			pt.set(6, compressed);
+			pt.set(5, newProtocol);
+			pt.set(4, fragmented);
+		}
+		
+		os.write(pt.toByteArray());
+	}
+	
+	protected void writeData(DataOutputStream os) throws IOException {
+		os.write(data);
 	}
 }

@@ -7,13 +7,9 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.macs.CMac;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
-import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -22,6 +18,8 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import java.math.BigInteger;
 import java.security.*;
 
+import static pw.lemmmy.ts3protocol.packets.LowLevelPacket.MAC_SIZE;
+
 public class CryptoUtils {
 	public static final byte[] FAKE_EAX_KEY = { 0x63, 0x3A, 0x5C, 0x77, 0x69, 0x6E, 0x64, 0x6F, 0x77,
 		0x73, 0x5C, 0x73, 0x79, 0x73, 0x74, 0x65 };
@@ -29,10 +27,11 @@ public class CryptoUtils {
 	public static final byte[] FAKE_EAX_NONCE = { 0x6D, 0x5C, 0x66, 0x69, 0x72, 0x65, 0x77, 0x61, 0x6C,
 		0x6C, 0x33, 0x32, 0x2E, 0x63, 0x70, 0x6C };
 	
+	public static final byte[] HANDSHAKE_MAC = { 0x54, 0x53, 0x33, 0x49, 0x4E, 0x49, 0x54, 0x31 };
+	
 	public static final ECNamedCurveParameterSpec PRIME256_V1 = ECNamedCurveTable.getParameterSpec("prime256v1");
 	public static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
 	
-	// TODO: key persistence
 	public static KeyPair generateECDHKeypair() throws NoSuchAlgorithmException,
 													   InvalidAlgorithmParameterException {
 		KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDH", PROVIDER);
@@ -62,7 +61,7 @@ public class CryptoUtils {
 	public static byte[][] eaxEncrypt(byte[] key, byte[] nonce, byte[] header, byte[] data) throws
 																							InvalidCipherTextException {
 		EAXBlockCipher cipher = new EAXBlockCipher(new AESEngine());
-		cipher.init(true, new AEADParameters(new KeyParameter(key), 8 * 8, nonce, header));
+		cipher.init(true, new AEADParameters(new KeyParameter(key), MAC_SIZE * 8, nonce, header));
 		
 		byte[] enc = new byte[cipher.getOutputSize(data.length)];
 		int len = cipher.processBytes(data, 0, data.length, enc, 0);
