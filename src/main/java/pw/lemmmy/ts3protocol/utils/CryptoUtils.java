@@ -6,8 +6,6 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -32,9 +30,6 @@ public class CryptoUtils {
 	public static final byte[] HANDSHAKE_MAC = { 0x54, 0x53, 0x33, 0x49, 0x4E, 0x49, 0x54, 0x31 };
 	
 	public static final ECNamedCurveParameterSpec PRIME256_V1 = ECNamedCurveTable.getParameterSpec("prime256v1");
-	public static final ECDomainParameters PRIME256_V1_DOMAIN = new ECDomainParameters(
-		PRIME256_V1.getCurve(), PRIME256_V1.getG(), PRIME256_V1.getN(), PRIME256_V1.getH()
-	);
 	public static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
 	
 	public static KeyPair generateECDHKeypair() throws NoSuchAlgorithmException,
@@ -105,11 +100,15 @@ public class CryptoUtils {
 		EAXBlockCipher cipher = new EAXBlockCipher(new AESEngine());
 		cipher.init(false, new AEADParameters(new KeyParameter(key), mac.length * 8, nonce, header));
 		
-		byte[] dec = new byte[cipher.getOutputSize(data.length + mac.length)];
+		// concatenate the data and mac into one input array
+		byte[] in = new byte[data.length + mac.length];
+		System.arraycopy(data, 0, in, 0, data.length);
+		System.arraycopy(mac, 0, in, data.length, mac.length);
+		
+		byte[] dec = new byte[cipher.getOutputSize(in.length)];
 		
 		try {
-			int len = cipher.processBytes(data, 0, data.length, dec, 0);
-			cipher.processBytes(mac, 0, mac.length, dec, 0);
+			int len = cipher.processBytes(in, 0, in.length, dec, 0);
 			cipher.doFinal(dec, len);
 		} catch (InvalidCipherTextException e) {
 			System.err.println("Failed to decrypt data - MAC check failed or data was invalid:");
