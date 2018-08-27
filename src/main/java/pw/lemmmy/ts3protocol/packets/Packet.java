@@ -107,6 +107,9 @@ public class Packet {
 		for (int i = 0; i < packetCount; i++) {
 			LowLevelPacket packet = new LowLevelPacket();
 			
+			int id = client.incrementPacketCounter(packetType, client.getPacketIDCounterOutgoing(), client.getPacketGenerationCounterOutgoing());
+			if (id != -1) packet.setPacketID((short) id);
+			
 			if (i == 0) {
 				packet.packetType = packetType;
 				packet.unencrypted = unencrypted;

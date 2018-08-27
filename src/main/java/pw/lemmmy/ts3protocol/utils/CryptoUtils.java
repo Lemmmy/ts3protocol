@@ -1,8 +1,15 @@
 package pw.lemmmy.ts3protocol.utils;
 
+import net.i2p.crypto.eddsa.EdDSAEngine;
+import net.i2p.crypto.eddsa.EdDSAPrivateKey;
+import net.i2p.crypto.eddsa.math.Curve;
+import net.i2p.crypto.eddsa.math.GroupElement;
+import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec;
+import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
 import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -29,8 +36,16 @@ public class CryptoUtils {
 	
 	public static final byte[] HANDSHAKE_MAC = { 0x54, 0x53, 0x33, 0x49, 0x4E, 0x49, 0x54, 0x31 };
 	
-	public static final ECNamedCurveParameterSpec PRIME256_V1 = ECNamedCurveTable.getParameterSpec("prime256v1");
 	public static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
+	
+	public static final ECNamedCurveParameterSpec PRIME256_V1 = ECNamedCurveTable.getParameterSpec("prime256v1");
+	
+	public static final EdDSANamedCurveSpec CURVE25519_SPEC = EdDSANamedCurveTable.ED_25519_CURVE_SPEC;
+	public static final Curve CURVE25519 = CURVE25519_SPEC.getCurve();
+	
+	static {
+		Security.addProvider(PROVIDER);
+	}
 	
 	public static KeyPair generateECDHKeypair() throws NoSuchAlgorithmException,
 													   InvalidAlgorithmParameterException {
@@ -116,5 +131,37 @@ public class CryptoUtils {
 		}
 		
 		return dec;
+	}
+	
+	public static byte[] sha1(byte[] data) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-1", PROVIDER);
+			return md.digest(data);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			return data;
+		}
+	}
+	
+	public static byte[] sha512(byte[] data) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-512", PROVIDER);
+			return md.digest(data);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			return data;
+		}
+	}
+	
+	public static GroupElement decompressEdPoint(byte[] key) {
+		return CURVE25519.createPoint(key, true);
+	}
+	
+	public static byte[] signEDDSA(EdDSAPrivateKey key, byte[] data) throws NoSuchAlgorithmException,
+																			InvalidKeyException, SignatureException {
+		Signature sig = new EdDSAEngine(MessageDigest.getInstance(CURVE25519_SPEC.getHashAlgorithm()));
+		sig.initSign(key);
+		sig.update(data);
+		return sig.sign();
 	}
 }

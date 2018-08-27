@@ -1,5 +1,6 @@
 package pw.lemmmy.ts3protocol.packets;
 
+import lombok.AllArgsConstructor;
 import org.apache.commons.codec.Charsets;
 import org.bouncycastle.util.encoders.Base64;
 import pw.lemmmy.ts3protocol.Client;
@@ -10,19 +11,16 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+@AllArgsConstructor
 public class PacketCommand extends Packet {
 	private Command command;
 	
 	{
 		packetType = PacketType.COMMAND;
+		unencrypted = false;
 	}
 	
 	public PacketCommand() {}
-	
-	public PacketCommand(Command command) {
-		this.command = command;
-		this.unencrypted = false;
-	}
 	
 	@Override
 	protected void writeData(Client client, DataOutputStream os) throws IOException {
@@ -42,6 +40,11 @@ public class PacketCommand extends Packet {
 			System.err.println("Don't know how to handle command " + commandName);
 		} else {
 			command.decode(args);
+			
+			for (short packetID : packetIDs) {
+				client.send(new PacketAck(packetID)); // lol
+			}
+			
 			client.handleCommand(command);
 		}
 	}

@@ -1,14 +1,15 @@
 package pw.lemmmy.ts3protocol;
 
 import lombok.Getter;
+import net.i2p.crypto.eddsa.EdDSAPrivateKey;
+import net.i2p.crypto.eddsa.math.GroupElement;
+import net.i2p.crypto.eddsa.spec.EdDSAPrivateKeySpec;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.util.encoders.Base64;
-import pw.lemmmy.ts3protocol.commands.Command;
-import pw.lemmmy.ts3protocol.commands.CommandClientInitIV;
-import pw.lemmmy.ts3protocol.commands.CommandInitIVExpand2;
-import pw.lemmmy.ts3protocol.commands.CommandListener;
+import org.bouncycastle.util.encoders.Hex;
+import pw.lemmmy.ts3protocol.commands.*;
 import pw.lemmmy.ts3protocol.packets.*;
 import pw.lemmmy.ts3protocol.packets.init.*;
 import pw.lemmmy.ts3protocol.utils.CryptoUtils;
@@ -41,6 +42,16 @@ public class Client implements Runnable {
 	private byte[] eaxKey = CryptoUtils.FAKE_EAX_KEY;
 	private byte[] eaxNonce = CryptoUtils.FAKE_EAX_NONCE;
 	
+	private byte[] ivAlpha = new byte[10];
+	private byte[] sharedIV = new byte[64];
+	private byte[] sharedMac = new byte[8];
+	
+	private Map<PacketType, Integer> packetIDCounterIncoming = new HashMap<>();
+	private Map<PacketType, Integer> packetIDCounterOutgoing = new HashMap<>();
+	private Map<PacketType, Integer> packetGenerationCounterIncoming = new HashMap<>();
+	private Map<PacketType, Integer> packetGenerationCounterOutgoing = new HashMap<>();
+	private boolean countingPackets = false;
+	
 	private Map<Class<? extends Command>, Set<CommandListener>> commandListeners = new HashMap<>();
 	
 	public Client(InetAddress host) throws SocketException {
@@ -52,6 +63,13 @@ public class Client implements Runnable {
 		this.port = port;
 		
 		socket = new DatagramSocket();
+		
+		Arrays.stream(PacketType.values()).forEach(type -> {
+			packetIDCounterIncoming.put(type, 0);
+			packetIDCounterOutgoing.put(type, 0);
+			packetGenerationCounterIncoming.put(type, 0);
+			packetGenerationCounterOutgoing.put(type, 0);
+		});
 		
 		try {
 			// TODO: persist the keypair for a consistent identity
@@ -67,13 +85,61 @@ public class Client implements Runnable {
 																				SignatureException,
 																				InvalidKeyException,
 																				NoSuchAlgorithmException {
-		byte[] licence = Base64.decode(initIVExpand2.getArguments().get("l"));
+		byte[] licenceBytes = Base64.decode(initIVExpand2.getArguments().get("l"));
 		byte[] randomBytes = Base64.decode(initIVExpand2.getArguments().get("beta"));
 		byte[] omega = Base64.decode(initIVExpand2.getArguments().get("omega"));
 		byte[] proof = Base64.decode(initIVExpand2.getArguments().get("proof"));
 		
+		System.out.println(initIVExpand2.getArguments().get("l"));
+		
 		ECPublicKey publicKey = CryptoUtils.fromDERASN1((ASN1Sequence) DERSequence.fromByteArray(omega));
-		if (!CryptoUtils.verifyECDSA(publicKey, licence, proof)) throw new RuntimeException("Licence verification failed");
+		if (!CryptoUtils.verifyECDSA(publicKey, licenceBytes, proof)) throw new RuntimeException("Licence verification failed");
+		
+		Licence licence;
+		try (
+			ByteArrayInputStream bis = new ByteArrayInputStream(licenceBytes);
+			DataInputStream dis = new DataInputStream(bis)
+		) {
+			licence = new Licence();
+			licence.parse(dis);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+		
+		GroupElement licenceKey = licence.getKey();
+		
+		byte[] seed = new byte[CryptoUtils.CURVE25519.getField().getb() / 8];
+		rand.nextBytes(seed);
+		
+		EdDSAPrivateKeySpec privKey = new EdDSAPrivateKeySpec(seed, CryptoUtils.CURVE25519_SPEC);
+		
+		byte[] sharedSecret = licenceKey.scalarMultiply(seed).toByteArray();
+		System.out.println(String.format("Shared secret (%d): %s", sharedSecret.length, Hex.toHexString(sharedSecret)));
+		
+		sharedIV = CryptoUtils.sha512(sharedSecret);
+		
+		for (int i = 0; i < 10; i++) sharedIV[i]      ^= ivAlpha[i];
+		for (int i = 0; i < 54; i++) sharedIV[i + 10] ^= randomBytes[i];
+		
+		byte[] sharedIVSha1 = CryptoUtils.sha1(sharedIV);
+		System.arraycopy(sharedIVSha1, 0, sharedMac, 0, 8);
+		
+		System.out.println(String.format("Shared IV (%d): %s", sharedIV.length, Hex.toHexString(sharedIV)));
+		System.out.println(String.format("Shared MAC (%d): %s", sharedMac.length, Hex.toHexString(sharedMac)));
+		
+		byte[] ekProof = new byte[seed.length + randomBytes.length];
+		System.arraycopy(seed, 0, ekProof, 0, seed.length);
+		System.arraycopy(randomBytes, 0, ekProof, 32, randomBytes.length);
+		byte[] ekProofSigned = CryptoUtils.signEDDSA(new EdDSAPrivateKey(privKey), ekProof);
+		System.out.println(String.format("EK raw (%d): %s", ekProof.length, Hex.toHexString(ekProof)));
+		System.out.println(String.format("EK signed (%d): %s", ekProofSigned.length, Hex.toHexString(ekProofSigned)));
+		
+		packetIDCounterIncoming.put(PacketType.COMMAND, 1);
+		countingPackets = true;
+		
+		CommandClientEK clientEK = new CommandClientEK(seed, ekProofSigned);
+		send(new PacketCommand(clientEK));
 	}
 	
 	private void handshake() {
@@ -81,10 +147,9 @@ public class Client implements Runnable {
 		rand.nextBytes(randomBytes);
 		byte[] serverBytes = new byte[16]; // will be set by the server
 		byte[] serverBytes2 = new byte[100];
-		byte[] alpha = new byte[10]; // for clientinitiv
-		rand.nextBytes(alpha);
+		rand.nextBytes(ivAlpha);
 		
-		CommandClientInitIV initiv = new CommandClientInitIV(alpha, keyPair, host);
+		CommandClientInitIV initiv = new CommandClientInitIV(ivAlpha, keyPair, host);
 		
 		sendLowLevel(new PacketInit0(randomBytes));
 		receiveLowLevel(new PacketInit1(randomBytes, serverBytes));
@@ -150,6 +215,24 @@ public class Client implements Runnable {
 		}
 	}
 	
+	public int incrementPacketCounter(PacketType type, Map<PacketType, Integer> counter, Map<PacketType, Integer>
+		generation) {
+		if (countingPackets) {
+			int current = counter.get(type);
+			
+			if (current >= 65535) {
+				counter.put(type, 0);
+				generation.put(type, generation.get(type) + 1);
+			} else {
+				counter.put(type, current + 1);
+			}
+			
+			return counter.get(type);
+		} else {
+			return -1;
+		}
+	}
+	
 	private void receiveLowLevel(LowLevelPacket packet) {
 		packet.setDirection(SERVER_TO_CLIENT);
 		
@@ -162,17 +245,19 @@ public class Client implements Runnable {
 		) {
 			socket.receive(dp);
 			packet.read(dis, dp.getLength());
+			
+			incrementPacketCounter(packet.getPacketType(), packetIDCounterIncoming, packetGenerationCounterIncoming);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private void send(Packet packet) {
+	public void send(Packet packet) {
 		packet.setDirection(CLIENT_TO_SERVER);
 		Arrays.stream(packet.write(this)).forEach(this::sendLowLevel);
 	}
 	
-	private void sendLowLevel(LowLevelPacket packet) {
+	public void sendLowLevel(LowLevelPacket packet) {
 		packet.setDirection(CLIENT_TO_SERVER);
 		
 		try (
@@ -189,6 +274,8 @@ public class Client implements Runnable {
 	
 	private Optional<Packet> getPacketFromType(PacketType type) {
 		switch (type) {
+			case ACK:
+				return Optional.of(new PacketAck());
 			case COMMAND:
 				return Optional.of(new PacketCommand());
 			default:

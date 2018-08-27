@@ -11,6 +11,7 @@ public class CommandRegistry {
 	static {
 		commands.put("clientinitiv", CommandClientInitIV::new);
 		commands.put("initivexpand2", CommandInitIVExpand2::new);
+		commands.put("clientek", CommandClientEK::new);
 	}
 	
 	public static Optional<Command> getCommand(String name) {
