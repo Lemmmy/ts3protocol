@@ -108,11 +108,17 @@ public class Client implements Runnable {
 		}
 		
 		GroupElement licenceKey = licence.getKey();
+		// GroupElement licenceKey = CryptoUtils.decompressEdPoint(licence.getKey());
+		// System.out.println("FINAL FINAL EDKEY: " + licence.getKey());
 		
 		byte[] seed = new byte[CryptoUtils.CURVE25519.getField().getb() / 8];
 		rand.nextBytes(seed);
 		
+		// System.out.println(String.format("Bytes: %s", Hex.toHexString(seed)));
+		
 		EdDSAPrivateKeySpec privKey = new EdDSAPrivateKeySpec(seed, CryptoUtils.CURVE25519_SPEC);
+		/*System.out.println(String.format("Priv key [\na=%s\nH=%s\ns=%s\n]", Hex.toHexString(privKey.geta()), Hex
+			.toHexString(privKey.getH()), Hex.toHexString(privKey.getSeed())));*/
 		
 		byte[] sharedSecret = licenceKey.scalarMultiply(seed).toByteArray();
 		System.out.println(String.format("Shared secret (%d): %s", sharedSecret.length, Hex.toHexString(sharedSecret)));
@@ -125,15 +131,16 @@ public class Client implements Runnable {
 		byte[] sharedIVSha1 = CryptoUtils.sha1(sharedIV);
 		System.arraycopy(sharedIVSha1, 0, sharedMac, 0, 8);
 		
-		System.out.println(String.format("Shared IV (%d): %s", sharedIV.length, Hex.toHexString(sharedIV)));
-		System.out.println(String.format("Shared MAC (%d): %s", sharedMac.length, Hex.toHexString(sharedMac)));
+		// System.out.println(String.format("Shared IV (%d): %s", sharedIV.length, Hex.toHexString(sharedIV)));
+		// System.out.println(String.format("Shared MAC (%d): %s", sharedMac.length, Hex.toHexString(sharedMac)));
 		
 		byte[] ekProof = new byte[seed.length + randomBytes.length];
 		System.arraycopy(seed, 0, ekProof, 0, seed.length);
 		System.arraycopy(randomBytes, 0, ekProof, 32, randomBytes.length);
 		byte[] ekProofSigned = CryptoUtils.signEDDSA(new EdDSAPrivateKey(privKey), ekProof);
-		System.out.println(String.format("EK raw (%d): %s", ekProof.length, Hex.toHexString(ekProof)));
-		System.out.println(String.format("EK signed (%d): %s", ekProofSigned.length, Hex.toHexString(ekProofSigned)));
+		// System.out.println(String.format("EK raw (%d): %s", ekProof.length, Hex.toHexString(ekProof)));
+		// System.out.println(String.format("EK signed (%d): %s", ekProofSigned.length, Hex.toHexString
+		// (ekProofSigned)));
 		
 		packetIDCounterIncoming.put(PacketType.COMMAND, 1);
 		countingPackets = true;
@@ -157,10 +164,6 @@ public class Client implements Runnable {
 		PacketInit3 init3 = new PacketInit3(serverBytes2);
 		receiveLowLevel(init3);
 		sendLowLevel(new PacketInit4(init3.getX(), init3.getN(), init3.getLevel(), serverBytes2, initiv));
-		System.out.println("Low-level init process finished");
-		
-		send(new PacketCommand(initiv));
-		System.out.println("High-level init packet sent");
 	}
 	
 	public <T extends Command> void addCommandListener(Class<T> commandClass, CommandListener<T> listener) {

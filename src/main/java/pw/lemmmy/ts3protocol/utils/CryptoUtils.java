@@ -6,10 +6,8 @@ import net.i2p.crypto.eddsa.math.Curve;
 import net.i2p.crypto.eddsa.math.GroupElement;
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec;
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
-import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -51,12 +49,7 @@ public class CryptoUtils {
 													   InvalidAlgorithmParameterException {
 		KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDH", PROVIDER);
 		generator.initialize(PRIME256_V1, new SecureRandom());
-		KeyPair keyPair = generator.generateKeyPair();
-		
-		System.out.println("Pub: " + Hex.encodeHexString(keyPair.getPublic().getEncoded()));
-		System.out.println("Priv: " + Hex.encodeHexString(keyPair.getPrivate().getEncoded()));
-		
-		return keyPair;
+		return generator.generateKeyPair();
 	}
 	
 	public static DERSequence toDERASN1(KeyPair kp) {

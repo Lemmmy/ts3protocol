@@ -1,8 +1,6 @@
 package pw.lemmmy.ts3protocol.packets;
 
 import lombok.AllArgsConstructor;
-import org.apache.commons.codec.Charsets;
-import org.bouncycastle.util.encoders.Base64;
 import pw.lemmmy.ts3protocol.Client;
 import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.commands.CommandRegistry;
@@ -10,6 +8,7 @@ import pw.lemmmy.ts3protocol.commands.CommandRegistry;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @AllArgsConstructor
 public class PacketCommand extends Packet {
@@ -24,12 +23,16 @@ public class PacketCommand extends Packet {
 	
 	@Override
 	protected void writeData(Client client, DataOutputStream os) throws IOException {
+		System.out.println("C→S: " + command.encode());
+		
 		os.write(command.encode().getBytes());
 	}
 	
 	@Override
 	protected void readData(Client client, DataInputStream dis) {
-		String data = new String(this.data, Charsets.UTF_8); // TODO: ASCII or UTF-8?
+		String data = new String(this.data, StandardCharsets.UTF_8); // TODO: ASCII or UTF-8?
+		
+		System.out.println("S→C: " + data);
 		
 		String[] args = data.split(" ");
 		String commandName = args[0];

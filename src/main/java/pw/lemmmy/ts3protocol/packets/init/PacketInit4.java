@@ -1,12 +1,12 @@
 package pw.lemmmy.ts3protocol.packets.init;
 
-import org.apache.commons.codec.Charsets;
 import pw.lemmmy.ts3protocol.commands.CommandClientInitIV;
 import pw.lemmmy.ts3protocol.packets.PacketDirection;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
 public class PacketInit4 extends PacketInit {
 	private byte[] x, n;
@@ -43,7 +43,7 @@ public class PacketInit4 extends PacketInit {
 		System.arraycopy(oldBytesY, oldBytesY.length - 64, bytesY, 0, 64);
 		os.write(bytesY);
 		
-		os.write(initiv.encode().getBytes(Charsets.US_ASCII));
+		os.write(initiv.encode().getBytes(StandardCharsets.US_ASCII));
 		System.out.println(initiv.encode());
 	}
 }
