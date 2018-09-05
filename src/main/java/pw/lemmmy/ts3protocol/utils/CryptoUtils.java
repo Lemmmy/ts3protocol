@@ -1,7 +1,6 @@
 package pw.lemmmy.ts3protocol.utils;
 
-import net.i2p.crypto.eddsa.EdDSAEngine;
-import net.i2p.crypto.eddsa.EdDSAPrivateKey;
+import lombok.Getter;
 import net.i2p.crypto.eddsa.math.Curve;
 import net.i2p.crypto.eddsa.math.GroupElement;
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec;
@@ -18,7 +17,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.encoders.Base64;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -83,6 +84,10 @@ public class CryptoUtils {
 		return (ECPublicKey) factory.generatePublic(key);
 	}
 	
+	public static String toOmega(KeyPair keyPair) throws IOException {
+		return Base64.toBase64String(CryptoUtils.toDERASN1(keyPair).getEncoded());
+	}
+	
 	public static boolean verifyECDSA(ECPublicKey key, byte[] message, byte[] proof) throws NoSuchAlgorithmException,
 																							InvalidKeyException,
 																							SignatureException {
@@ -90,6 +95,15 @@ public class CryptoUtils {
 		signature.initVerify(key);
 		signature.update(message);
 		return signature.verify(proof);
+	}
+	
+	public static byte[] signECDSA(PrivateKey key, byte[] message) throws NoSuchAlgorithmException,
+																							InvalidKeyException,
+																							SignatureException {
+		Signature signature = Signature.getInstance("SHA256withECDSA", CryptoUtils.PROVIDER);
+		signature.initSign(key);
+		signature.update(message);
+		return signature.sign();
 	}
 	
 	public static byte[][] eaxEncrypt(byte[] key, byte[] nonce, byte[] header, byte[] data) throws
@@ -126,9 +140,9 @@ public class CryptoUtils {
 		return dec;
 	}
 	
-	public static byte[] sha1(byte[] data) {
+	public static byte[] hashDigest(String algorithm, byte[] data) {
 		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-1", PROVIDER);
+			MessageDigest md = MessageDigest.getInstance(algorithm, PROVIDER);
 			return md.digest(data);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
@@ -136,25 +150,63 @@ public class CryptoUtils {
 		}
 	}
 	
+	public static byte[] sha1(byte[] data) {
+		return hashDigest("SHA-1", data);
+	}
+	
+	public static byte[] sha256(byte[] data) {
+		return hashDigest("SHA-256", data);
+	}
+	
 	public static byte[] sha512(byte[] data) {
-		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-512", PROVIDER);
-			return md.digest(data);
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-			return data;
-		}
+		return hashDigest("SHA-512", data);
 	}
 	
 	public static GroupElement decompressEdPoint(byte[] key) {
 		return CURVE25519.createPoint(key, true);
 	}
 	
-	public static byte[] signEDDSA(EdDSAPrivateKey key, byte[] data) throws NoSuchAlgorithmException,
-																			InvalidKeyException, SignatureException {
-		Signature sig = new EdDSAEngine(MessageDigest.getInstance(CURVE25519_SPEC.getHashAlgorithm()));
-		sig.initSign(key);
-		sig.update(data);
-		return sig.sign();
+	public static String hashTeamspeakPassword(String password) {
+		return password == null || password.isEmpty() ? "" : Base64.toBase64String(sha1(password.getBytes()));
 	}
+	
+	private static int getLeadingZeros(byte data) {
+		for (int i = 0; i < 8; i++) {
+			if ((data & (1 << 7)) != 0) {
+				return i;
+			}
+			
+			data <<= 1;
+		}
+		
+		return 8;
+	}
+	
+	private static byte getHashCashLevel(String omega, long offset) {
+		byte[] data = sha1((omega + Long.toString(offset)).getBytes());
+		byte res = 0;
+		
+		for (byte d : data) {
+			if (d == 0) {
+				res += 8;
+			} else {
+				res += getLeadingZeros(d);
+				break;
+			}
+		}
+		
+		return res;
+	}
+	
+	public static long hashCash(KeyPair keyPair, byte level) throws IOException {
+		String omega = toOmega(keyPair);
+		
+		long offset = 0L;
+		while (offset < Long.MAX_VALUE && getHashCashLevel(omega, offset) < level) {
+			offset += 1;
+		}
+		
+		return offset;
+	}
+	
 }

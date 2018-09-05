@@ -39,7 +39,7 @@ public abstract class Command {
 	}
 	
 	public static String encodeValue(String value) {
-		return value
+		return value == null ? "" : value
 			.replace("\u000b", "\\v")
 			.replace("\u000c", "\\f")
 			.replace("\\", "\\\\")
@@ -52,7 +52,7 @@ public abstract class Command {
 	}
 	
 	public static String decodeValue(String value) {
-		return value
+		return value == null ? "" : value
 			.replace("\\v", "\u000b")
 			.replace("\\f", "\u000c")
 			.replace("\\t", "\t")

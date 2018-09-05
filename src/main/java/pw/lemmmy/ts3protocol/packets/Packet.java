@@ -2,9 +2,11 @@ package pw.lemmmy.ts3protocol.packets;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.val;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.util.encoders.Hex;
 import pw.lemmmy.ts3protocol.Client;
+import pw.lemmmy.ts3protocol.utils.CachedKey;
 import pw.lemmmy.ts3protocol.utils.CryptoUtils;
 import pw.lemmmy.ts3protocol.utils.QuickLZ;
 
@@ -38,7 +40,7 @@ public class Packet {
 				macs[i] = packet.mac;
 				packetIDs[i] = packet.packetID;
 				
-				// TODO: generation counters
+				int generationID = client.getPacketGenerationCounterIncoming().get(packetType);
 				
 				if (unencrypted) {
 					bos.write(packet.data);
@@ -48,12 +50,15 @@ public class Packet {
 						ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(SERVER_TO_CLIENT.getMetaSize());
 						DataOutputStream headerDOS = new DataOutputStream(headerBOS)
 					) {
+						byte[][] keyNonce =
+							client.isIvComplete() ? createKeyNonce(client, packet.packetID, generationID) : null;
+						
 						packet.writeMeta(headerDOS);
 						headerDOS.flush();
 						
 						byte[] decrypted = CryptoUtils.eaxDecrypt(
-							client.getEaxKey(),
-							client.getEaxNonce(),
+							keyNonce != null ? keyNonce[0] : client.getEaxKey(),
+							keyNonce != null ? keyNonce[1] : client.getEaxNonce(),
 							headerBOS.toByteArray(),
 							packet.data,
 							packet.mac
@@ -108,10 +113,12 @@ public class Packet {
 			LowLevelPacket packet = new LowLevelPacket();
 			
 			int id = client.incrementPacketCounter(packetType, client.getPacketIDCounterOutgoing(), client.getPacketGenerationCounterOutgoing());
+			int generationID = client.getPacketGenerationCounterOutgoing().get(packetType);
 			if (id != -1) packet.setPacketID((short) id);
 			
+			packet.packetType = packetType;
+			
 			if (i == 0) {
-				packet.packetType = packetType;
 				packet.unencrypted = unencrypted;
 				packet.compressed = compressed;
 				packet.newProtocol = newProtocol;
@@ -130,13 +137,14 @@ public class Packet {
 			);
 			
 			if (!unencrypted) {
-				// TODO: non-fake encrypt after IV stuff
 				try (
 					ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(CLIENT_TO_SERVER.getMetaSize());
 					DataOutputStream headerDOS = new DataOutputStream(headerBOS);
 					ByteArrayOutputStream dataBOS = new ByteArrayOutputStream(fragmentedDataSize);
 					DataOutputStream dataDOS = new DataOutputStream(dataBOS)
 				) {
+					byte[][] keyNonce = client.isIvComplete() ? createKeyNonce(client, id, generationID) : null;
+					
 					packet.writeMeta(headerDOS);
 					packet.writeData(dataDOS);
 					
@@ -144,8 +152,8 @@ public class Packet {
 					dataDOS.flush();
 					
 					byte[][] encrypted = CryptoUtils.eaxEncrypt(
-						client.getEaxKey(),
-						client.getEaxNonce(),
+						keyNonce != null ? keyNonce[0] : client.getEaxKey(),
+						keyNonce != null ? keyNonce[1] : client.getEaxNonce(),
 						headerBOS.toByteArray(),
 						dataBOS.toByteArray()
 					);
@@ -164,4 +172,55 @@ public class Packet {
 	}
 	
 	protected void writeData(Client client, DataOutputStream os) throws IOException {}
+	
+	private byte[][] createKeyNonce(Client client, int packetID, int generationID) {
+		val keyCache = direction == SERVER_TO_CLIENT ? client.getKeyCacheIncoming() : client.getKeyCacheOutgoing();
+		
+		if (!keyCache.containsKey(packetType) || keyCache.get(packetType).getGenerationID() != generationID) {
+			System.out.println(String.format(
+				"Generating key + nonce for packet type %s (direction: %s, generation: " + "%d)",
+				packetType.name(), direction.name(), generationID
+			));
+			
+			try (
+				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+				DataOutputStream dos = new DataOutputStream(bos)
+			) {
+				dos.writeByte(direction == SERVER_TO_CLIENT ? 0x30 : 0x31);
+				dos.writeByte(packetType.ordinal() & 0xF);
+				dos.writeInt(generationID);
+				dos.write(client.getSharedIV());
+				
+				dos.flush();
+				
+				byte[] data = bos.toByteArray();
+				System.out.println("Data: " + Hex.toHexString(data));
+				System.out.println("Data length: " + data.length);
+				
+				byte[] keyNonce = CryptoUtils.sha256(data);
+				byte[] key = new byte[16], nonce = new byte[16];
+				
+				System.arraycopy(keyNonce, 0, key, 0, 16);
+				System.arraycopy(keyNonce, 16, nonce, 0, 16);
+				
+				keyCache.put(packetType, new CachedKey(generationID, key, nonce));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		CachedKey cachedKey = keyCache.get(packetType);
+		byte[] key = cachedKey.getKey();
+		key[0] ^= (packetID & 0xFF00) >> 8;
+		key[1] ^=  packetID & 0x00FF;
+		
+		System.out.println(String.format(
+			"[%s] %s %d (generation %d)",
+			direction.name(), packetType.name(), packetID, generationID
+		));
+		System.out.println("Key: " + Hex.toHexString(key));
+		System.out.println("Nonce: " + Hex.toHexString(cachedKey.getNonce()));
+		
+		return new byte[][] { key, cachedKey.getNonce() };
+	}
 }
