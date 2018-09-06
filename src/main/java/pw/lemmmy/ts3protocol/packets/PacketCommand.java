@@ -17,6 +17,8 @@ public class PacketCommand extends Packet {
 	{
 		packetType = PacketType.COMMAND;
 		unencrypted = false;
+		compressed = true;
+		newProtocol = true;
 	}
 	
 	public PacketCommand() {}

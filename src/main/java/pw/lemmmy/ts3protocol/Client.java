@@ -67,8 +67,8 @@ public class Client implements Runnable {
 		socket = new DatagramSocket();
 		
 		Arrays.stream(PacketType.values()).forEach(type -> {
-			packetIDCounterIncoming.put(type, 0);
-			packetIDCounterOutgoing.put(type, 0);
+			packetIDCounterIncoming.put(type, 1);
+			packetIDCounterOutgoing.put(type, 1);
 			packetGenerationCounterIncoming.put(type, 0);
 			packetGenerationCounterOutgoing.put(type, 0);
 		});
@@ -105,6 +105,7 @@ public class Client implements Runnable {
 		byte[] sign = CryptoUtils.signECDSA(keyPair.getPrivate(), ekProof);
 		
 		packetIDCounterIncoming.put(PacketType.COMMAND, 1);
+		packetIDCounterOutgoing.put(PacketType.COMMAND, 0);
 		countingPackets = true;
 		
 		CommandClientEK clientEK = new CommandClientEK(tempPublicKey, sign);
@@ -162,6 +163,7 @@ public class Client implements Runnable {
 		PacketInit3 init3 = new PacketInit3(serverBytes2);
 		receiveLowLevel(init3);
 		sendLowLevel(new PacketInit4(init3.getX(), init3.getN(), init3.getLevel(), serverBytes2, initiv));
+		send(new PacketAck((short) 0));
 	}
 	
 	public <T extends Command> void addCommandListener(Class<T> commandClass, CommandListener<T> listener) {
@@ -206,7 +208,6 @@ public class Client implements Runnable {
 				if (hlPacketOpt.isPresent()) {
 					Packet hlPacket = hlPacketOpt.get();
 					hlPacket.setDirection(SERVER_TO_CLIENT);
-					System.out.println("Reading packet " + type.name());
 					hlPacket.read(this, packets.toArray(new LowLevelPacket[0]));
 				} else {
 					System.err.println("Don't know how to handle packet type " + type.name());

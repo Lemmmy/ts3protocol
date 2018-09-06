@@ -17,6 +17,8 @@ version "1.0-SNAPSHOT"
 
 sourceCompatibility = 1.8
 
+mainClassName = "pw.lemmmy.ts3protocol.Main"
+
 repositories {
     mavenCentral()
 }
@@ -30,5 +32,4 @@ dependencies {
     compile group: "commons-lang", "name": "commons-lang", version: "2.6"
     compile group: "org.bouncycastle", "name": "bcprov-jdk15on", version: "1.60"
     compile group: "net.i2p.crypto", "name": "eddsa", version: "0.3.0"
-    testCompile group: "junit", name: "junit", version: "4.12"
 }

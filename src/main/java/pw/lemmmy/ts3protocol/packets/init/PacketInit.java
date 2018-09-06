@@ -13,10 +13,11 @@ public abstract class PacketInit extends LowLevelPacket {
 	
 	byte step = 0;
 	
-	public PacketInit() {
-		this.mac = CryptoUtils.HANDSHAKE_MAC;
-		this.packetType = PacketType.INIT_1;
-		this.packetID = INIT1_PACKET_ID;
+	{
+		newProtocol = true;
+		mac = CryptoUtils.HANDSHAKE_MAC;
+		packetType = PacketType.INIT_1;
+		packetID = INIT1_PACKET_ID;
 	}
 	
 	@Override

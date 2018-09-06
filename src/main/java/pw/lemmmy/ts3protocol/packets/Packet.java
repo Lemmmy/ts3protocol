@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.util.encoders.Hex;
 import pw.lemmmy.ts3protocol.Client;
 import pw.lemmmy.ts3protocol.utils.CachedKey;
 import pw.lemmmy.ts3protocol.utils.CryptoUtils;
@@ -45,7 +44,6 @@ public class Packet {
 				if (unencrypted) {
 					bos.write(packet.data);
 				} else {
-					// TODO: non-fake decrypt after IV stuff
 					try (
 						ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(SERVER_TO_CLIENT.getMetaSize());
 						DataOutputStream headerDOS = new DataOutputStream(headerBOS)
@@ -56,17 +54,34 @@ public class Packet {
 						packet.writeMeta(headerDOS);
 						headerDOS.flush();
 						
-						byte[] decrypted = CryptoUtils.eaxDecrypt(
-							keyNonce != null ? keyNonce[0] : client.getEaxKey(),
-							keyNonce != null ? keyNonce[1] : client.getEaxNonce(),
-							headerBOS.toByteArray(),
-							packet.data,
-							packet.mac
-						);
-						
-						System.out.println("decrypted: " + Hex.toHexString(decrypted));
-						
-						bos.write(decrypted);
+						try {
+							byte[] decrypted = CryptoUtils.eaxDecrypt(
+								keyNonce != null ? keyNonce[0] : client.getEaxKey(),
+								keyNonce != null ? keyNonce[1] : client.getEaxNonce(),
+								headerBOS.toByteArray(),
+								packet.data,
+								packet.mac
+							);
+							
+							bos.write(decrypted);
+						} catch (InvalidCipherTextException e) {
+							System.err.println("Failed to decrypt data with calculated key, trying shared key");
+							
+							try {
+								byte[] decrypted = CryptoUtils.eaxDecrypt(
+									client.getEaxKey(),
+									client.getEaxNonce(),
+									headerBOS.toByteArray(),
+									packet.data,
+									packet.mac
+								);
+								
+								bos.write(decrypted);
+							} catch (InvalidCipherTextException e1) {
+								System.err.println("Can't decrypt data (mac check failed) with calculated and shared keys");
+								e1.printStackTrace();
+							}
+						}
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -105,12 +120,14 @@ public class Packet {
 		byte[] compressedData = compressed ? QuickLZ.compress(data, 1) : data;
 		
 		int fragmentedDataSize = LowLevelPacket.PACKET_SIZE - CLIENT_TO_SERVER.getHeaderSize();
-		int packetCount = (int) Math.ceil((float) compressedData.length / (float) fragmentedDataSize);
+		int packetCount = (int) Math.ceil((double) compressedData.length / (double) fragmentedDataSize);
 		boolean fragmented = packetCount > 1;
 		LowLevelPacket[] packets = new LowLevelPacket[packetCount];
 		
 		for (int i = 0; i < packetCount; i++) {
 			LowLevelPacket packet = new LowLevelPacket();
+			packet.setDirection(direction);
+			int packetSize = i == packetCount - 1 ? compressedData.length % fragmentedDataSize : fragmentedDataSize;
 			
 			int id = client.incrementPacketCounter(packetType, client.getPacketIDCounterOutgoing(), client.getPacketGenerationCounterOutgoing());
 			int generationID = client.getPacketGenerationCounterOutgoing().get(packetType);
@@ -129,33 +146,31 @@ public class Packet {
 				packet.midFragmented = true;
 			}
 			
-			packet.data = new byte[fragmentedDataSize];
+			packet.data = new byte[packetSize];
 			System.arraycopy(
 				compressedData, i * fragmentedDataSize,
 				packet.data, 0,
-				i == packetCount - 1 ? compressedData.length % fragmentedDataSize : fragmentedDataSize
+				packetSize
 			);
 			
-			if (!unencrypted) {
+			if (unencrypted && client.isIvComplete()) {
+				packet.mac = client.getSharedMac();
+			} else if (!unencrypted) {
 				try (
 					ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(CLIENT_TO_SERVER.getMetaSize());
-					DataOutputStream headerDOS = new DataOutputStream(headerBOS);
-					ByteArrayOutputStream dataBOS = new ByteArrayOutputStream(fragmentedDataSize);
-					DataOutputStream dataDOS = new DataOutputStream(dataBOS)
+					DataOutputStream headerDOS = new DataOutputStream(headerBOS)
 				) {
-					byte[][] keyNonce = client.isIvComplete() ? createKeyNonce(client, id, generationID) : null;
+					byte[][] keyNonce = client.isIvComplete() ? createKeyNonce(client, (short) id, generationID) : null;
 					
 					packet.writeMeta(headerDOS);
-					packet.writeData(dataDOS);
 					
 					headerDOS.flush();
-					dataDOS.flush();
 					
 					byte[][] encrypted = CryptoUtils.eaxEncrypt(
 						keyNonce != null ? keyNonce[0] : client.getEaxKey(),
 						keyNonce != null ? keyNonce[1] : client.getEaxNonce(),
 						headerBOS.toByteArray(),
-						dataBOS.toByteArray()
+						packet.data
 					);
 					
 					packet.mac = encrypted[0];
@@ -173,15 +188,10 @@ public class Packet {
 	
 	protected void writeData(Client client, DataOutputStream os) throws IOException {}
 	
-	private byte[][] createKeyNonce(Client client, int packetID, int generationID) {
+	private byte[][] createKeyNonce(Client client, short packetID, int generationID) {
 		val keyCache = direction == SERVER_TO_CLIENT ? client.getKeyCacheIncoming() : client.getKeyCacheOutgoing();
 		
 		if (!keyCache.containsKey(packetType) || keyCache.get(packetType).getGenerationID() != generationID) {
-			System.out.println(String.format(
-				"Generating key + nonce for packet type %s (direction: %s, generation: " + "%d)",
-				packetType.name(), direction.name(), generationID
-			));
-			
 			try (
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				DataOutputStream dos = new DataOutputStream(bos)
@@ -194,8 +204,6 @@ public class Packet {
 				dos.flush();
 				
 				byte[] data = bos.toByteArray();
-				System.out.println("Data: " + Hex.toHexString(data));
-				System.out.println("Data length: " + data.length);
 				
 				byte[] keyNonce = CryptoUtils.sha256(data);
 				byte[] key = new byte[16], nonce = new byte[16];
@@ -213,13 +221,6 @@ public class Packet {
 		byte[] key = cachedKey.getKey();
 		key[0] ^= (packetID & 0xFF00) >> 8;
 		key[1] ^=  packetID & 0x00FF;
-		
-		System.out.println(String.format(
-			"[%s] %s %d (generation %d)",
-			direction.name(), packetType.name(), packetID, generationID
-		));
-		System.out.println("Key: " + Hex.toHexString(key));
-		System.out.println("Nonce: " + Hex.toHexString(cachedKey.getNonce()));
 		
 		return new byte[][] { key, cachedKey.getNonce() };
 	}

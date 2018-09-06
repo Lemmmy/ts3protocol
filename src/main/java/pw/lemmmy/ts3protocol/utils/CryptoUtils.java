@@ -1,6 +1,5 @@
 package pw.lemmmy.ts3protocol.utils;
 
-import lombok.Getter;
 import net.i2p.crypto.eddsa.math.Curve;
 import net.i2p.crypto.eddsa.math.GroupElement;
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec;
@@ -111,14 +110,19 @@ public class CryptoUtils {
 		EAXBlockCipher cipher = new EAXBlockCipher(new AESEngine());
 		cipher.init(true, new AEADParameters(new KeyParameter(key), MAC_SIZE * 8, nonce, header));
 		
-		byte[] enc = new byte[cipher.getOutputSize(data.length)];
-		int len = cipher.processBytes(data, 0, data.length, enc, 0);
-		cipher.doFinal(enc, len);
+		byte[] rawEnc = new byte[cipher.getOutputSize(data.length)];
+		int len = cipher.processBytes(data, 0, data.length, rawEnc, 0);
+		cipher.doFinal(rawEnc, len);
+		
+		// rawEnc includes the MAC, lets strip that out)
+		// TODO: find a better way
+		byte[] enc = new byte[rawEnc.length - MAC_SIZE];
+		System.arraycopy(rawEnc, 0, enc, 0, enc.length);
 		
 		return new byte[][] { cipher.getMac(), enc };
 	}
 	
-	public static byte[] eaxDecrypt(byte[] key, byte[] nonce, byte[] header, byte[] data, byte[] mac) {
+	public static byte[] eaxDecrypt(byte[] key, byte[] nonce, byte[] header, byte[] data, byte[] mac) throws InvalidCipherTextException {
 		EAXBlockCipher cipher = new EAXBlockCipher(new AESEngine());
 		cipher.init(false, new AEADParameters(new KeyParameter(key), mac.length * 8, nonce, header));
 		
@@ -129,13 +133,8 @@ public class CryptoUtils {
 		
 		byte[] dec = new byte[cipher.getOutputSize(in.length)];
 		
-		try {
-			int len = cipher.processBytes(in, 0, in.length, dec, 0);
-			cipher.doFinal(dec, len);
-		} catch (InvalidCipherTextException e) {
-			System.err.println("Failed to decrypt data - MAC check failed or data was invalid:");
-			e.printStackTrace();
-		}
+		int len = cipher.processBytes(in, 0, in.length, dec, 0);
+		cipher.doFinal(dec, len);
 		
 		return dec;
 	}
