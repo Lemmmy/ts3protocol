@@ -1,9 +1,11 @@
-package pw.lemmmy.ts3protocol.packets;
+package pw.lemmmy.ts3protocol.packets.command;
 
 import lombok.AllArgsConstructor;
 import pw.lemmmy.ts3protocol.Client;
 import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.commands.CommandRegistry;
+import pw.lemmmy.ts3protocol.packets.Packet;
+import pw.lemmmy.ts3protocol.packets.PacketType;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -45,11 +47,6 @@ public class PacketCommand extends Packet {
 			System.err.println("Don't know how to handle command " + commandName);
 		} else {
 			command.decode(args);
-			
-			for (short packetID : packetIDs) {
-				client.send(new PacketAck(packetID)); // lol
-			}
-			
 			client.handleCommand(command);
 		}
 	}

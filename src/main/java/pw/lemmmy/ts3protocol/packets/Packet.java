@@ -218,9 +218,11 @@ public class Packet {
 		}
 		
 		CachedKey cachedKey = keyCache.get(packetType);
-		byte[] key = cachedKey.getKey();
-		key[0] ^= (packetID & 0xFF00) >> 8;
-		key[1] ^=  packetID & 0x00FF;
+		byte[] cachedKeyKey = cachedKey.getKey();
+		byte[] key = new byte[cachedKeyKey.length];
+		System.arraycopy(cachedKeyKey, 0, key, 0, key.length);
+		key[0] ^= packetID >> 8;
+		key[1] ^= packetID & 0xFF;
 		
 		return new byte[][] { key, cachedKey.getNonce() };
 	}

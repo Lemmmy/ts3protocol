@@ -44,6 +44,5 @@ public class PacketInit4 extends PacketInit {
 		os.write(bytesY);
 		
 		os.write(initiv.encode().getBytes(StandardCharsets.US_ASCII));
-		System.out.println(initiv.encode());
 	}
 }

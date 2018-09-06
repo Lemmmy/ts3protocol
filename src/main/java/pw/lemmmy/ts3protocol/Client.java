@@ -7,7 +7,15 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.util.encoders.Base64;
 import pw.lemmmy.ts3protocol.commands.*;
-import pw.lemmmy.ts3protocol.packets.*;
+import pw.lemmmy.ts3protocol.packets.LowLevelPacket;
+import pw.lemmmy.ts3protocol.packets.Packet;
+import pw.lemmmy.ts3protocol.packets.PacketType;
+import pw.lemmmy.ts3protocol.packets.ack.PacketAck;
+import pw.lemmmy.ts3protocol.packets.ack.PacketAckLow;
+import pw.lemmmy.ts3protocol.packets.ack.PacketPing;
+import pw.lemmmy.ts3protocol.packets.ack.PacketPong;
+import pw.lemmmy.ts3protocol.packets.command.PacketCommand;
+import pw.lemmmy.ts3protocol.packets.command.PacketCommandLow;
 import pw.lemmmy.ts3protocol.packets.init.*;
 import pw.lemmmy.ts3protocol.utils.CachedKey;
 import pw.lemmmy.ts3protocol.utils.CryptoUtils;
@@ -163,7 +171,6 @@ public class Client implements Runnable {
 		PacketInit3 init3 = new PacketInit3(serverBytes2);
 		receiveLowLevel(init3);
 		sendLowLevel(new PacketInit4(init3.getX(), init3.getN(), init3.getLevel(), serverBytes2, initiv));
-		send(new PacketAck((short) 0));
 	}
 	
 	public <T extends Command> void addCommandListener(Class<T> commandClass, CommandListener<T> listener) {
@@ -187,7 +194,7 @@ public class Client implements Runnable {
 	}
 	
 	private void readLoop() throws IOException {
-		List<LowLevelPacket> packets = new ArrayList<>();
+		List<LowLevelPacket> packets = new ArrayList<>(), fragmentedPackets = new ArrayList<>();
 		boolean fragmented = false;
 		
 		while (true) {
@@ -195,26 +202,50 @@ public class Client implements Runnable {
 			packet.setDirection(SERVER_TO_CLIENT);
 			receiveLowLevel(packet);
 			
-			// start of fragmented packet set
-			if (!fragmented && packet.isFragmented()) fragmented = true;
+			// send corresponding acknowledgement packets. this has to be done during fragmentation, not HL parsing
+			switch (packet.getPacketType()) {
+				case COMMAND:
+					send(new PacketAck(packet.getPacketID()));
+					break;
+				case COMMAND_LOW:
+					send(new PacketAckLow(packet.getPacketID()));
+					break;
+				case PING:
+					send(new PacketPong(packet.getPacketID()));
+					break;
+			}
 			
-			packets.add(packet);
-			
-			// end of fragmented packet set, or not a fragmented packet
-			if (!fragmented || packet.isFragmented()) {
-				PacketType type = packets.get(0).getPacketType();
-				
-				Optional<Packet> hlPacketOpt = getPacketFromType(type);
-				if (hlPacketOpt.isPresent()) {
-					Packet hlPacket = hlPacketOpt.get();
-					hlPacket.setDirection(SERVER_TO_CLIENT);
-					hlPacket.read(this, packets.toArray(new LowLevelPacket[0]));
-				} else {
-					System.err.println("Don't know how to handle packet type " + type.name());
+			if (packet.getPacketType().isFragmentable()) {
+				// start of fragmented packet set
+				if (packet.isFragmented()) {
+					fragmented = !fragmented;
 				}
 				
+				fragmentedPackets.add(packet);
+				
+				// end of fragmented packet set, or not a fragmented packet
+				if (!fragmented) {
+					readPackets(fragmentedPackets);
+					fragmentedPackets.clear();
+				}
+			} else {
+				packets.add(packet);
+				readPackets(packets);
 				packets.clear();
 			}
+		}
+	}
+	
+	private void readPackets(List<LowLevelPacket> packets) throws IOException {
+		PacketType type = packets.get(0).getPacketType();
+		
+		Optional<Packet> hlPacketOpt = getPacketFromType(type);
+		if (hlPacketOpt.isPresent()) {
+			Packet hlPacket = hlPacketOpt.get();
+			hlPacket.setDirection(SERVER_TO_CLIENT);
+			hlPacket.read(this, packets.toArray(new LowLevelPacket[0]));
+		} else {
+			System.err.println("Don't know how to handle packet type " + type.name());
 		}
 	}
 	
@@ -281,8 +312,16 @@ public class Client implements Runnable {
 		switch (type) {
 			case ACK:
 				return Optional.of(new PacketAck());
+			case ACK_LOW:
+				return Optional.of(new PacketAckLow());
+			case PING:
+				return Optional.of(new PacketPing());
+			case PONG:
+				return Optional.of(new PacketPong());
 			case COMMAND:
 				return Optional.of(new PacketCommand());
+			case COMMAND_LOW:
+				return Optional.of(new PacketCommandLow());
 			default:
 				return Optional.empty();
 		}

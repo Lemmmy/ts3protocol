@@ -6,15 +6,15 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum PacketType {
-	VOICE(false),
-	VOICE_WHISPER(false),
-	COMMAND(true),
-	COMMAND_LOW(true),
-	PING(false),
-	PONG(false),
-	ACK(true),
-	ACK_LOW(true),
-	INIT_1(false);
+	VOICE(false, false),
+	VOICE_WHISPER(false, false),
+	COMMAND(true, true),
+	COMMAND_LOW(true, true),
+	PING(false, false),
+	PONG(false, false),
+	ACK(true, false),
+	ACK_LOW(true, false),
+	INIT_1(false, false);
 	
-	private boolean encrypted;
+	private boolean encrypted, fragmentable;
 }
