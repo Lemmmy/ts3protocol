@@ -1,5 +1,7 @@
 package pw.lemmmy.ts3protocol.commands;
 
+import pw.lemmmy.ts3protocol.commands.handshake.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -13,6 +15,8 @@ public class CommandRegistry {
 		commands.put("initivexpand2", CommandInitIVExpand2::new);
 		commands.put("clientek", CommandClientEK::new);
 		commands.put("clientinit", CommandClientInit::new);
+		commands.put("initserver", CommandInitServer::new);
+		commands.put("sendtextmessage", CommandSendTextMessage::new);
 	}
 	
 	public static Optional<Command> getCommand(String name) {

@@ -1,9 +1,10 @@
-package pw.lemmmy.ts3protocol.commands;
+package pw.lemmmy.ts3protocol.commands.handshake;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import pw.lemmmy.ts3protocol.Version;
+import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.utils.CryptoUtils;
 
 @Getter

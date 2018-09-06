@@ -6,7 +6,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.util.encoders.Base64;
-import pw.lemmmy.ts3protocol.commands.*;
+import pw.lemmmy.ts3protocol.commands.Command;
+import pw.lemmmy.ts3protocol.commands.CommandListener;
+import pw.lemmmy.ts3protocol.commands.handshake.*;
 import pw.lemmmy.ts3protocol.packets.LowLevelPacket;
 import pw.lemmmy.ts3protocol.packets.Packet;
 import pw.lemmmy.ts3protocol.packets.PacketType;
@@ -54,6 +56,8 @@ public class Client implements Runnable {
 	private byte[] sharedMac = new byte[8];
 	private boolean ivComplete = false;
 	
+	private short clientID = 0;
+	
 	private Map<PacketType, Integer> 	packetIDCounterIncoming = new HashMap<>(),
 										packetIDCounterOutgoing = new HashMap<>(),
 										packetGenerationCounterIncoming = new HashMap<>(),
@@ -89,6 +93,11 @@ public class Client implements Runnable {
 		}
 		
 		addCommandListener(CommandInitIVExpand2.class, this::handleInitIVExpand2);
+		addCommandListener(CommandInitServer.class, this::handleInitServer);
+	}
+	
+	private void handleInitServer(CommandInitServer initServer) {
+		clientID = Short.parseShort(initServer.getArguments().get("aclid"));
 	}
 	
 	private void handleInitIVExpand2(CommandInitIVExpand2 initIVExpand2) throws IOException, InvalidKeySpecException,

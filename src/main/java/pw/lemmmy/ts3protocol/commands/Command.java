@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 @Getter
 public abstract class Command {
-	Map<String, String> arguments = new HashMap<>();
+	protected Map<String, String> arguments = new HashMap<>();
 	
 	public Command() {}
 	

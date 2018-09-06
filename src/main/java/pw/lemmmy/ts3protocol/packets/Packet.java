@@ -19,7 +19,7 @@ import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
 public class Packet {
 	protected PacketDirection direction;
 	protected byte[][] macs;
-	protected short[] packetIDs, clientIDs;
+	protected short[] packetIDs;
 	protected PacketType packetType;
 	protected boolean unencrypted = true, compressed, newProtocol;
 	protected byte[] data;
@@ -126,6 +126,7 @@ public class Packet {
 		
 		for (int i = 0; i < packetCount; i++) {
 			LowLevelPacket packet = new LowLevelPacket();
+			packet.setClientID(client.getClientID());
 			packet.setDirection(direction);
 			int packetSize = i == packetCount - 1 ? compressedData.length % fragmentedDataSize : fragmentedDataSize;
 			

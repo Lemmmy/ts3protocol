@@ -1,7 +1,8 @@
-package pw.lemmmy.ts3protocol.commands;
+package pw.lemmmy.ts3protocol.commands.handshake;
 
 import lombok.AllArgsConstructor;
 import org.bouncycastle.util.encoders.Base64;
+import pw.lemmmy.ts3protocol.commands.Command;
 
 @AllArgsConstructor
 public class CommandClientEK extends Command {

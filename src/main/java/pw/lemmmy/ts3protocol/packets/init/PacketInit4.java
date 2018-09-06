@@ -1,6 +1,6 @@
 package pw.lemmmy.ts3protocol.packets.init;
 
-import pw.lemmmy.ts3protocol.commands.CommandClientInitIV;
+import pw.lemmmy.ts3protocol.commands.handshake.CommandClientInitIV;
 import pw.lemmmy.ts3protocol.packets.PacketDirection;
 
 import java.io.DataOutputStream;
