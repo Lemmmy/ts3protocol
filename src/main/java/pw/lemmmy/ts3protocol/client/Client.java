@@ -8,9 +8,13 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 @Getter
 public class Client implements Runnable {
+	public static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+	
 	private static final short DEFAULT_PORT = 9987;
 	
 	private InetAddress host;

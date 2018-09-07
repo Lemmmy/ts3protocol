@@ -17,21 +17,35 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
 
 public class PacketHandler {
+	private static final long PING_INTERVAL = 5;
+	
 	private Client client;
 	private ConnectionParameters params;
 	private DatagramSocket socket;
 	
 	protected boolean ivComplete;
 	
+	private ScheduledFuture<?> pingFuture;
+	
 	public PacketHandler(Client client) {
 		this.client = client;
 		this.params = client.getParams();
 		this.socket = client.getSocket();
+	}
+	
+	protected void startPinging() {
+		pingFuture = Client.EXECUTOR.scheduleAtFixedRate(() -> send(new PacketPing()), PING_INTERVAL, PING_INTERVAL, TimeUnit.SECONDS);
+	}
+	
+	protected void stopPinging() { // TODO: deal with closing
+		pingFuture.cancel(false);
 	}
 	
 	void readLoop() throws IOException {
