@@ -1,7 +1,8 @@
-package pw.lemmmy.ts3protocol;
+package pw.lemmmy.ts3protocol.client;
 
 import lombok.Getter;
 import pw.lemmmy.ts3protocol.commands.CommandHandler;
+import pw.lemmmy.ts3protocol.server.Server;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -16,6 +17,7 @@ public class Client implements Runnable {
 	private short port;
 	private DatagramSocket socket;
 	
+	private Server server;
 	private Identity identity;
 	
 	private ConnectionParameters params;
@@ -33,10 +35,13 @@ public class Client implements Runnable {
 		this.port = port;
 		
 		socket = new DatagramSocket();
+		
 		params = new ConnectionParameters(this);
 		packetHandler = new PacketHandler(this);
 		commandHandler = new CommandHandler();
 		handshake = new Handshake(this);
+		
+		server = new Server(this);
 	}
 	
 	@Override

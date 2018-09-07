@@ -1,4 +1,4 @@
-package pw.lemmmy.ts3protocol;
+package pw.lemmmy.ts3protocol.client;
 
 import lombok.Getter;
 import net.i2p.crypto.eddsa.math.GroupElement;

@@ -1,5 +1,8 @@
 package pw.lemmmy.ts3protocol;
 
+import pw.lemmmy.ts3protocol.client.Client;
+import pw.lemmmy.ts3protocol.client.Identity;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;

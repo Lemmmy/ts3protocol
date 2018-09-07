@@ -2,39 +2,72 @@ package pw.lemmmy.ts3protocol.commands;
 
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Getter
 public abstract class Command {
+	@Getter protected List<Map<String, String>> argumentSets = new ArrayList<>();
+	
+	// for easy building
 	protected Map<String, String> arguments = new HashMap<>();
 	
 	public Command() {}
 	
 	public abstract String getName();
 	
+	public Map<String, String> getArguments() {
+		return argumentSets.get(0);
+	}
+	
+	public Map<String, String> getArguments(int index) {
+		return argumentSets.get(index);
+	}
+	
 	public void populateArguments() {}
 	
+	protected void beginNewArgumentSet() {
+		argumentSets.add(arguments);
+		arguments = new HashMap<>();
+	}
+	
 	public String encode() {
-		arguments.clear();
+		argumentSets.clear();
+		arguments = new HashMap<>();
 		populateArguments();
+		argumentSets.add(arguments);
 		
-		return getName() + " " + arguments.entrySet().stream()
+		return getName() + " " + argumentSets.stream()
+			.map(this::encodeArgumentSet)
+			.collect(Collectors.joining("|"));
+	}
+	
+	private String encodeArgumentSet(Map<String, String> args) {
+		return args.entrySet().stream()
 			.map(e -> e.getKey() + "=" + encodeValue(e.getValue()))
 			.collect(Collectors.joining(" "));
 	}
 	
-	public void decode(String[] args) {
-		arguments.clear();
+	public void decode(String data) {
+		argumentSets.clear();
 		
-		for (int i = 1; i < args.length; i++) { // start at 1 to skip the command name itself
-			String arg = args[i];
-			String[] parts = arg.split("=", 2);
+		String[] sets = data.split("\\|");
+		
+		for (String set : sets) {
+			String[] args = set.split(" ");
+			arguments = new HashMap<>();
 			
-			if (parts.length > 1) {
-				arguments.put(parts[0], decodeValue(parts[1]));
+			for (String arg : args) {
+				String[] parts = arg.split("=", 2);
+				
+				if (parts.length > 1) {
+					arguments.put(parts[0], decodeValue(parts[1]));
+				}
 			}
+			
+			argumentSets.add(arguments);
 		}
 	}
 	

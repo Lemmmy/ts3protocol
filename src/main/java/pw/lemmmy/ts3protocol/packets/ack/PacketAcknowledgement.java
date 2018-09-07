@@ -1,7 +1,7 @@
 package pw.lemmmy.ts3protocol.packets.ack;
 
 import lombok.AllArgsConstructor;
-import pw.lemmmy.ts3protocol.Client;
+import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.packets.Packet;
 
 import java.io.DataInputStream;

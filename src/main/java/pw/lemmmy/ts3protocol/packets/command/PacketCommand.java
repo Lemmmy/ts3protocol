@@ -1,7 +1,7 @@
 package pw.lemmmy.ts3protocol.packets.command;
 
 import lombok.AllArgsConstructor;
-import pw.lemmmy.ts3protocol.Client;
+import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.commands.CommandRegistry;
 import pw.lemmmy.ts3protocol.packets.Packet;
@@ -46,7 +46,7 @@ public class PacketCommand extends Packet {
 		if (command == null) {
 			System.err.println("Don't know how to handle command " + commandName);
 		} else {
-			command.decode(args);
+			command.decode(data.replaceFirst(commandName + " ", ""));
 			client.getCommandHandler().handleCommand(command);
 		}
 	}

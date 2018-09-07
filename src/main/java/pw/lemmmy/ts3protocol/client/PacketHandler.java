@@ -1,4 +1,4 @@
-package pw.lemmmy.ts3protocol;
+package pw.lemmmy.ts3protocol.client;
 
 import pw.lemmmy.ts3protocol.packets.LowLevelPacket;
 import pw.lemmmy.ts3protocol.packets.Packet;

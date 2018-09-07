@@ -1,4 +1,6 @@
-package pw.lemmmy.ts3protocol.commands;
+package pw.lemmmy.ts3protocol.commands.messages;
+
+import pw.lemmmy.ts3protocol.commands.Command;
 
 public class CommandSendTextMessage extends Command {
 	private int targetMode; // TODO: create a Channel type
