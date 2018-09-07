@@ -17,6 +17,8 @@ public class CommandRegistry {
 		commands.put("clientinit", CommandClientInit::new);
 		commands.put("initserver", CommandInitServer::new);
 		commands.put("sendtextmessage", CommandSendTextMessage::new);
+		commands.put("clientupdate", CommandClientUpdate::new);
+		commands.put("notifytextmessage", CommandNotifyTextMessage::new);
 	}
 	
 	public static Optional<Command> getCommand(String name) {

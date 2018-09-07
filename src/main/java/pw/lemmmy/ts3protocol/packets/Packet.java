@@ -5,8 +5,10 @@ import lombok.Setter;
 import lombok.val;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import pw.lemmmy.ts3protocol.Client;
-import pw.lemmmy.ts3protocol.utils.CachedKey;
-import pw.lemmmy.ts3protocol.utils.CryptoUtils;
+import pw.lemmmy.ts3protocol.ConnectionParameters;
+import pw.lemmmy.ts3protocol.crypto.CachedKey;
+import pw.lemmmy.ts3protocol.crypto.EAX;
+import pw.lemmmy.ts3protocol.crypto.Hash;
 import pw.lemmmy.ts3protocol.utils.QuickLZ;
 
 import java.io.*;
@@ -25,6 +27,8 @@ public class Packet {
 	protected byte[] data;
 	
 	public void read(Client client, LowLevelPacket[] packets) throws IOException {
+		ConnectionParameters params = client.getParams();
+		
 		macs = new byte[packets.length][];
 		packetIDs = new short[packets.length];
 		
@@ -39,7 +43,7 @@ public class Packet {
 				macs[i] = packet.mac;
 				packetIDs[i] = packet.packetID;
 				
-				int generationID = client.getPacketGenerationCounterIncoming().get(packetType);
+				int generationID = params.getPacketGenerationCounterIncoming().get(packetType);
 				
 				if (unencrypted) {
 					bos.write(packet.data);
@@ -49,15 +53,15 @@ public class Packet {
 						DataOutputStream headerDOS = new DataOutputStream(headerBOS)
 					) {
 						byte[][] keyNonce =
-							client.isIvComplete() ? createKeyNonce(client, packet.packetID, generationID) : null;
+							client.getPacketHandler().shouldEncryptPackets() ? createKeyNonce(client, packet.packetID, generationID) : null;
 						
 						packet.writeMeta(headerDOS);
 						headerDOS.flush();
 						
 						try {
-							byte[] decrypted = CryptoUtils.eaxDecrypt(
-								keyNonce != null ? keyNonce[0] : client.getEaxKey(),
-								keyNonce != null ? keyNonce[1] : client.getEaxNonce(),
+							byte[] decrypted = EAX.eaxDecrypt(
+								keyNonce != null ? keyNonce[0] : params.getEaxKey(),
+								keyNonce != null ? keyNonce[1] : params.getEaxNonce(),
 								headerBOS.toByteArray(),
 								packet.data,
 								packet.mac
@@ -65,12 +69,14 @@ public class Packet {
 							
 							bos.write(decrypted);
 						} catch (InvalidCipherTextException e) {
-							System.err.println("Failed to decrypt data with calculated key, trying shared key");
+							if (packetType != PacketType.ACK) { // normal for the first ACK
+								System.err.println("Failed to decrypt data with calculated key, trying shared key");
+							}
 							
 							try {
-								byte[] decrypted = CryptoUtils.eaxDecrypt(
-									client.getEaxKey(),
-									client.getEaxNonce(),
+								byte[] decrypted = EAX.eaxDecrypt(
+									params.getEaxKey(),
+									params.getEaxNonce(),
 									headerBOS.toByteArray(),
 									packet.data,
 									packet.mac
@@ -106,6 +112,9 @@ public class Packet {
 	protected void readData(Client client, DataInputStream dis) throws IOException {}
 	
 	public LowLevelPacket[] write(Client client) {
+		ConnectionParameters params = client.getParams();
+		boolean shouldEncrypt = client.getPacketHandler().shouldEncryptPackets();
+		
 		try (
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream dos = new DataOutputStream(bos)
@@ -126,12 +135,12 @@ public class Packet {
 		
 		for (int i = 0; i < packetCount; i++) {
 			LowLevelPacket packet = new LowLevelPacket();
-			packet.setClientID(client.getClientID());
+			packet.setClientID(params.getClientID());
 			packet.setDirection(direction);
 			int packetSize = i == packetCount - 1 ? compressedData.length % fragmentedDataSize : fragmentedDataSize;
 			
-			int id = client.incrementPacketCounter(packetType, client.getPacketIDCounterOutgoing(), client.getPacketGenerationCounterOutgoing());
-			int generationID = client.getPacketGenerationCounterOutgoing().get(packetType);
+			int id = params.incrementPacketCounter(packetType, CLIENT_TO_SERVER);
+			int generationID = params.getPacketGenerationCounterOutgoing().get(packetType);
 			if (id != -1) packet.setPacketID((short) id);
 			
 			packet.packetType = packetType;
@@ -154,22 +163,22 @@ public class Packet {
 				packetSize
 			);
 			
-			if (unencrypted && client.isIvComplete()) {
-				packet.mac = client.getSharedMac();
+			if (unencrypted && shouldEncrypt) {
+				packet.mac = params.getSharedMac();
 			} else if (!unencrypted) {
 				try (
 					ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(CLIENT_TO_SERVER.getMetaSize());
 					DataOutputStream headerDOS = new DataOutputStream(headerBOS)
 				) {
-					byte[][] keyNonce = client.isIvComplete() ? createKeyNonce(client, (short) id, generationID) : null;
+					byte[][] keyNonce = shouldEncrypt ? createKeyNonce(client, (short) id, generationID) : null;
 					
 					packet.writeMeta(headerDOS);
 					
 					headerDOS.flush();
 					
-					byte[][] encrypted = CryptoUtils.eaxEncrypt(
-						keyNonce != null ? keyNonce[0] : client.getEaxKey(),
-						keyNonce != null ? keyNonce[1] : client.getEaxNonce(),
+					byte[][] encrypted = EAX.eaxEncrypt(
+						keyNonce != null ? keyNonce[0] : params.getEaxKey(),
+						keyNonce != null ? keyNonce[1] : params.getEaxNonce(),
 						headerBOS.toByteArray(),
 						packet.data
 					);
@@ -190,7 +199,8 @@ public class Packet {
 	protected void writeData(Client client, DataOutputStream os) throws IOException {}
 	
 	private byte[][] createKeyNonce(Client client, short packetID, int generationID) {
-		val keyCache = direction == SERVER_TO_CLIENT ? client.getKeyCacheIncoming() : client.getKeyCacheOutgoing();
+		ConnectionParameters params = client.getParams();
+		val keyCache = direction == SERVER_TO_CLIENT ? params.getKeyCacheIncoming() : params.getKeyCacheOutgoing();
 		
 		if (!keyCache.containsKey(packetType) || keyCache.get(packetType).getGenerationID() != generationID) {
 			try (
@@ -200,13 +210,13 @@ public class Packet {
 				dos.writeByte(direction == SERVER_TO_CLIENT ? 0x30 : 0x31);
 				dos.writeByte(packetType.ordinal() & 0xF);
 				dos.writeInt(generationID);
-				dos.write(client.getSharedIV());
+				dos.write(params.getSharedIV());
 				
 				dos.flush();
 				
 				byte[] data = bos.toByteArray();
 				
-				byte[] keyNonce = CryptoUtils.sha256(data);
+				byte[] keyNonce = Hash.sha256(data);
 				byte[] key = new byte[16], nonce = new byte[16];
 				
 				System.arraycopy(keyNonce, 0, key, 0, 16);

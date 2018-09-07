@@ -5,7 +5,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import pw.lemmmy.ts3protocol.Version;
 import pw.lemmmy.ts3protocol.commands.Command;
-import pw.lemmmy.ts3protocol.utils.CryptoUtils;
+import pw.lemmmy.ts3protocol.crypto.Crypto;
 
 @Getter
 @Setter
@@ -36,8 +36,8 @@ public class CommandClientInit extends Command {
 		arguments.put("client_input_hardware", "1");
 		arguments.put("client_output_hardware", "1");
 		arguments.put("client_default_channel", defaultChannel);
-		arguments.put("client_default_channel_password", CryptoUtils.hashTeamspeakPassword(defaultChannelPassword));
-		arguments.put("client_server_password", CryptoUtils.hashTeamspeakPassword(serverPassword));
+		arguments.put("client_default_channel_password", Crypto.hashTeamspeakPassword(defaultChannelPassword));
+		arguments.put("client_server_password", Crypto.hashTeamspeakPassword(serverPassword));
 		arguments.put("client_meta_data", "");
 		arguments.put("client_key_offset", Long.toString(keyOffset));
 		arguments.put("client_nickname_phonetic", phoneticNickname);

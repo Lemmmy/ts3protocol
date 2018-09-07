@@ -2,7 +2,8 @@ package pw.lemmmy.ts3protocol;
 
 import lombok.Getter;
 import net.i2p.crypto.eddsa.math.GroupElement;
-import pw.lemmmy.ts3protocol.utils.CryptoUtils;
+import pw.lemmmy.ts3protocol.crypto.EC;
+import pw.lemmmy.ts3protocol.crypto.Hash;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -65,17 +66,13 @@ public class Licence {
 				dos.flush();
 				
 				byte[] blockData = bos.toByteArray();
-				byte[] hashedBlock = CryptoUtils.sha512(blockData);
+				byte[] hashedBlock = Hash.sha512(blockData);
 				byte[] hashOut = new byte[32];
 				System.arraycopy(hashedBlock, 0, hashOut, 0, 32);
 				
-				// scalar clamp the hash
-				hashOut[0]  &= 0xF8;
-				hashOut[31] &= 0x3F;
-				hashOut[31] |= 0x40;
-				
-				GroupElement publicKey = CryptoUtils.decompressEdPoint(publicKeyBytes);
-				GroupElement parentKey = CryptoUtils.decompressEdPoint(key);
+				EC.scalarClamp(hashOut);
+				GroupElement publicKey = EC.decompressEdPoint(publicKeyBytes);
+				GroupElement parentKey = EC.decompressEdPoint(key);
 				
 				key = publicKey.scalarMultiply(hashOut).toP3().add(parentKey.toCached()).toP3().toByteArray();
 			}

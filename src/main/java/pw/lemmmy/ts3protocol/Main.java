@@ -13,7 +13,7 @@ public class Main {
 			
 			String host = properties.getProperty("host", "127.0.0.1");
 			
-			new Client(InetAddress.getByName(host)).run();
+			new Client(new Identity(), InetAddress.getByName(host)).run();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

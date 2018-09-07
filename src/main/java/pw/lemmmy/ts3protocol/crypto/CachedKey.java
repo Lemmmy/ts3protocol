@@ -1,4 +1,4 @@
-package pw.lemmmy.ts3protocol.utils;
+package pw.lemmmy.ts3protocol.crypto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

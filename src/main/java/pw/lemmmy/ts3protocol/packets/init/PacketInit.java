@@ -1,8 +1,8 @@
 package pw.lemmmy.ts3protocol.packets.init;
 
+import pw.lemmmy.ts3protocol.crypto.Crypto;
 import pw.lemmmy.ts3protocol.packets.LowLevelPacket;
 import pw.lemmmy.ts3protocol.packets.PacketType;
-import pw.lemmmy.ts3protocol.utils.CryptoUtils;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -15,7 +15,7 @@ public abstract class PacketInit extends LowLevelPacket {
 	
 	{
 		newProtocol = true;
-		mac = CryptoUtils.HANDSHAKE_MAC;
+		mac = Crypto.HANDSHAKE_MAC;
 		packetType = PacketType.INIT_1;
 		packetID = INIT1_PACKET_ID;
 	}
