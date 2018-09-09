@@ -15,6 +15,14 @@ public abstract class EnumProperty<E extends Enum> extends Property<E> {
 	@Override
 	public void decodeProperty(Map<String, String> arguments) {
 		if (!arguments.containsKey(getName())) return;
-		setValue(getEnumClass().getEnumConstants()[Integer.parseInt(arguments.get(getName()))]);
+		setValue(parseEnumProperty(getEnumClass(), arguments, getName()));
+	}
+	
+	public static <E> E parseEnumProperty(Class<E> enumClass, int value) {
+		return enumClass.getEnumConstants()[value];
+	}
+	
+	public static <E> E parseEnumProperty(Class<E> enumClass, Map<String, String> arguments, String name) {
+		return parseEnumProperty(enumClass, Integer.parseInt(arguments.get(name)));
 	}
 }

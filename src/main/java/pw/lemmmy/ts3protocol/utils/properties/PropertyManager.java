@@ -9,10 +9,7 @@ import pw.lemmmy.ts3protocol.commands.properties.CommandUpdateProperties;
 import pw.lemmmy.ts3protocol.packets.command.PacketCommand;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
@@ -22,21 +19,19 @@ public class PropertyManager {
 	private Map<Class<? extends Property>, List<ChangeListener<?>>> changeListeners = new HashMap<>();
 	
 	private Class<? extends CommandUpdateProperties> updateCommand;
-	private Class<? extends CommandNotifyProperties> notifyCommand;
+	private List<Class<? extends CommandNotifyProperties>> notifyCommands = new ArrayList<>();
 	
 	private Client client;
 	
-	public PropertyManager(Client client, Class<? extends CommandUpdateProperties> updateCommand, Class<? extends CommandNotifyProperties> notifyCommand) {
-		this.updateCommand = updateCommand;
-		this.notifyCommand = notifyCommand;
-		
+	public PropertyManager(Client client,
+						   Class<? extends CommandUpdateProperties> updateCommand,
+						   Class<? extends CommandNotifyProperties>... notifyHandlers) {
 		this.client = client;
 		
-		addCommandHandlers(client);
-	}
-	
-	private void addCommandHandlers(Client client) {
-		client.getCommandHandler().addCommandListener(notifyCommand, this::readFromCommand);
+		this.updateCommand = updateCommand;
+		
+		notifyCommands.addAll(Arrays.asList(notifyHandlers));
+		notifyCommands.forEach(n -> client.getCommandHandler().addCommandListener(n, this::readFromCommand));
 	}
 	
 	public <T> void addChangeListener(Class<? extends Property<T>> property, ChangeListener<T> listener) {
@@ -51,9 +46,13 @@ public class PropertyManager {
 		return (T) properties.get(property).getValue();
 	}
 	
-	public void add(Property property) {
-		property.setManager(this);
-		properties.put(property.getClass(), property);
+	public PropertyManager add(Property... props) {
+		for (Property property : props) {
+			property.setManager(this);
+			properties.put(property.getClass(), property);
+		}
+		
+		return this;
 	}
 	
 	public <T> PropertyManager set(Class<? extends Property<T>> property, T value) {
@@ -92,7 +91,14 @@ public class PropertyManager {
 	}
 	
 	public void readFromCommand(Command command) {
-		properties.values().forEach(p -> p.decodeProperty(command.getArguments()));
+		properties.values().forEach(p -> {
+			try {
+				p.decodeProperty(command.getArguments());
+			} catch (Exception e) {
+				System.err.println("Error decoding property " + p.getClass().getSimpleName() + " from command " + command.getName());
+				e.printStackTrace();
+			}
+		});
 	}
 	
 	protected <T> void notifyPropertyChange(Property<T> property) {

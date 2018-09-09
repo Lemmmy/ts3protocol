@@ -16,9 +16,16 @@ public abstract class Property<T> {
 	
 	public Property<T> setValue(T value) {
 		this.value = value;
+		markChanged();
+		return this;
+	}
+	
+	/**
+	 * For bean properties. Calling {@link #setValue} already marks a property as changed.
+	 */
+	public void markChanged() {
 		changed = true;
 		manager.notifyPropertyChange(this);
-		return this;
 	}
 	
 	public abstract void encodeProperty(Map<String, String> arguments);
