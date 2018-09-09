@@ -34,11 +34,11 @@ lombok {
 }
 
 dependencies {
-    compile group: "commons-lang", "name": "commons-lang", version: "2.6"
-    compile group: "org.bouncycastle", "name": "bcprov-jdk15on", version: "1.60"
-    compile group: "net.i2p.crypto", "name": "eddsa", version: "0.3.0"
-    compile group: "club.minnced", "name": "opus-java", version: "1.0.4"
-    compile group: "club.minnced", "name": "opus-java-natives", version: "1.0.4"
-    compile group: "club.minnced", "name": "opus-java-api", version: "1.0.4"
-    compile group: "org.mobicents.external.jspeex", name: "jspeex", version: "0.9.7"
+    compile "commons-lang:commons-lang:2.6"
+    compile "org.bouncycastle:bcprov-jdk15on:1.60"
+    compile "net.i2p.crypto:eddsa:0.3.0"
+    compile "club.minnced:opus-java:1.0.4"
+    compile "club.minnced:opus-java-natives:1.0.4"
+    compile "club.minnced:opus-java-api:1.0.4"
+    compile "org.mobicents.external.jspeex:jspeex:0.9.7"
 }
