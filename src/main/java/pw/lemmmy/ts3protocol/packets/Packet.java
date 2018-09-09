@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.util.encoders.Hex;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.client.ConnectionParameters;
 import pw.lemmmy.ts3protocol.crypto.CachedKey;
@@ -12,6 +13,7 @@ import pw.lemmmy.ts3protocol.crypto.Hash;
 import pw.lemmmy.ts3protocol.utils.QuickLZ;
 
 import java.io.*;
+import java.util.Arrays;
 
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
@@ -97,7 +99,7 @@ public class Packet {
 			data = bos.toByteArray();
 		}
 		
-		if (compressed) data = QuickLZ.decompress(data);
+		if (compressed && packetType.isCompressible()) data = QuickLZ.decompress(data);
 		
 		try (
 			ByteArrayInputStream bis = new ByteArrayInputStream(data);
@@ -126,7 +128,7 @@ public class Packet {
 			e.printStackTrace();
 		}
 		
-		byte[] compressedData = compressed ? QuickLZ.compress(data, 1) : data;
+		byte[] compressedData = compressed && packetType.isCompressible() ? QuickLZ.compress(data, 1) : data;
 		
 		int fragmentedDataSize = LowLevelPacket.PACKET_SIZE - CLIENT_TO_SERVER.getHeaderSize();
 		int packetCount = (int) Math.ceil((double) compressedData.length / (double) fragmentedDataSize);

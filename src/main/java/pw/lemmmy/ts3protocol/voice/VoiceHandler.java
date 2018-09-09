@@ -20,15 +20,23 @@ public class VoiceHandler {
 	}
 	
 	public void handleAudioPacket(PacketVoice voice) { // TODO: other audio packets + codecs
-		CodecType codecType = voice.getCodecType();
-		VoiceCodec codec = codecType.getCodec();
-		if (codec == null) return;
-		
-		byte[] out = codec.decode(voice.getVoiceData());
-		if (out != null) {
-			if (codec.getChannels() == 1) {
-				out = VoiceUtils.monoToStereo(out);
+		try {
+			CodecType codecType = voice.getCodecType();
+			VoiceCodec codec = codecType.getCodec();
+			if (codec == null) return;
+			
+			byte[] voiceData = voice.getVoiceData();
+			if (voiceData.length <= 0) return;
+			
+			byte[] out = codec.decode(voiceData);
+			if (out != null) {
+				if (codec.getChannels() == 1) {
+					out = VoiceUtils.monoToStereo(out);
+				}
 			}
+		} catch (Exception e) {
+			System.err.println("Error decoding voice packet:");
+			e.printStackTrace();
 		}
 	}
 }

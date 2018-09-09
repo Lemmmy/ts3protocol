@@ -58,6 +58,7 @@ public class OpusCodec extends VoiceCodec {
 			data, data.length,
 			outputBuffer, OPUS_FRAME_SIZE, 0
 		);
+		if (length < 0) return null;
 		
 		byte[] out = new byte[length * 2 * getChannels()];
 		outputByteBuffer.get(out);
