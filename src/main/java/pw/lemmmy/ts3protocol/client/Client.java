@@ -2,7 +2,9 @@ package pw.lemmmy.ts3protocol.client;
 
 import lombok.Getter;
 import pw.lemmmy.ts3protocol.commands.CommandHandler;
+import pw.lemmmy.ts3protocol.commands.handshake.CommandInitServer;
 import pw.lemmmy.ts3protocol.server.Server;
+import pw.lemmmy.ts3protocol.users.User;
 import pw.lemmmy.ts3protocol.voice.VoiceHandler;
 
 import java.io.IOException;
@@ -13,7 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Getter
-public class Client implements Runnable {
+public class Client extends User implements Runnable {
 	public static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
 	
 	private static final short DEFAULT_PORT = 9987;
@@ -22,7 +24,6 @@ public class Client implements Runnable {
 	private short port;
 	private DatagramSocket socket;
 	
-	private Server server;
 	private Identity identity;
 	
 	private ConnectionParameters params;
@@ -36,6 +37,8 @@ public class Client implements Runnable {
 	}
 	
 	public Client(Identity identity, InetAddress host, short port) throws SocketException {
+		super();
+		
 		this.identity = identity;
 		this.host = host;
 		this.port = port;
@@ -51,6 +54,10 @@ public class Client implements Runnable {
 		voiceHandler.init();
 		
 		server = new Server(this);
+		setClient(this);
+		
+		props.set(Nickname.class, identity.getNickname());
+		props.set(PhoneticNickname.class, identity.getPhoneticNickname());
 	}
 	
 	@Override

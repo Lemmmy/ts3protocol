@@ -42,7 +42,8 @@ public class PropertyManager {
 		changeListeners.get(property).add(listener);
 	}
 	
-	public <T, C> T get(Class<? extends Property<T>> property) {
+	public <T> T get(Class<? extends Property<T>> property) {
+		if (!properties.containsKey(property)) return null;
 		return (T) properties.get(property).getValue();
 	}
 	
@@ -90,13 +91,23 @@ public class PropertyManager {
 		}
 	}
 	
+	protected boolean shouldReadCommand(Command command, Map<String, String> arguments) {
+		return true;
+	}
+	
 	public void readFromCommand(Command command) {
+		command.getArgumentSets().forEach(arguments -> readFromArgumentSet(command, arguments));
+	}
+	
+	public void readFromArgumentSet(Command command, Map<String, String> arguments) {
+		if (!shouldReadCommand(command, arguments)) return;
+		
 		properties.values().forEach(p -> {
 			try {
-				p.decodeProperty(command.getArguments());
-			} catch (Exception e) {
+				p.decodeProperty(arguments);
+			} catch (Exception err) {
 				System.err.println("Error decoding property " + p.getClass().getSimpleName() + " from command " + command.getName());
-				e.printStackTrace();
+				err.printStackTrace();
 			}
 		});
 	}

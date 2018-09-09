@@ -141,7 +141,9 @@ public class Handshake {
 	}
 	
 	private void handleInitServer(CommandInitServer initServer) {
-		params.clientID = Short.parseShort(initServer.getArguments().get("aclid"));
+		client.setID(Short.parseShort(initServer.getArguments().get("aclid")));
+		client.props.readFromCommand(initServer);
+		client.getServer().addUser(client);
 		handler.startPinging();
 	}
 }

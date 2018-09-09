@@ -24,8 +24,6 @@ public class ConnectionParameters {
 	@Setter private byte[] sharedIV;
 	@Setter private byte[] sharedMac;
 	
-	protected short clientID = 0;
-	
 	private Map<PacketType, Integer> 	packetIDCounterIncoming = new HashMap<>(),
 										packetIDCounterOutgoing = new HashMap<>(),
 										packetGenerationCounterIncoming = new HashMap<>(),

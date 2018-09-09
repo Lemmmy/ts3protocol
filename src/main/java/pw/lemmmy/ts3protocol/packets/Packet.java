@@ -137,7 +137,7 @@ public class Packet {
 		
 		for (int i = 0; i < packetCount; i++) {
 			LowLevelPacket packet = new LowLevelPacket();
-			packet.setClientID(params.getClientID());
+			packet.setClientID(client.getID());
 			packet.setDirection(direction);
 			int packetSize = i == packetCount - 1 ? compressedData.length % fragmentedDataSize : fragmentedDataSize;
 			
