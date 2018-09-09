@@ -131,7 +131,8 @@ public class Handshake {
 		handler.ivComplete = true;
 		
 		CommandClientInit init = new CommandClientInit()
-			.setNickname("Poopy bot")
+			.setNickname(identity.getNickname())
+			.setPhoneticNickname(identity.getPhoneticNickname())
 			.setVersion(Version.DEFAULT_VERSION)
 			.setHardwareID(DEFAULT_HWID)
 			.setKeyOffset(identity.getKeyOffset());

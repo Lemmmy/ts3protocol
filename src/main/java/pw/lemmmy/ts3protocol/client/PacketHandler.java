@@ -9,6 +9,7 @@ import pw.lemmmy.ts3protocol.packets.ack.PacketPing;
 import pw.lemmmy.ts3protocol.packets.ack.PacketPong;
 import pw.lemmmy.ts3protocol.packets.command.PacketCommand;
 import pw.lemmmy.ts3protocol.packets.command.PacketCommandLow;
+import pw.lemmmy.ts3protocol.packets.voice.PacketVoice;
 
 import java.io.*;
 import java.net.DatagramPacket;
@@ -53,40 +54,44 @@ public class PacketHandler {
 		boolean fragmented = false;
 		
 		while (true) {
-			LowLevelPacket packet = new LowLevelPacket();
-			packet.setDirection(SERVER_TO_CLIENT);
-			receiveLowLevel(packet);
-			
-			// send corresponding acknowledgement packets. this has to be done during fragmentation, not HL parsing
-			switch (packet.getPacketType()) {
-				case COMMAND:
-					send(new PacketAck(packet.getPacketID()));
-					break;
-				case COMMAND_LOW:
-					send(new PacketAckLow(packet.getPacketID()));
-					break;
-				case PING:
-					send(new PacketPong(packet.getPacketID()));
-					break;
-			}
-			
-			if (packet.getPacketType().isFragmentable()) {
-				// start of fragmented packet set
-				if (packet.isFragmented()) {
-					fragmented = !fragmented;
+			try {
+				LowLevelPacket packet = new LowLevelPacket();
+				packet.setDirection(SERVER_TO_CLIENT);
+				receiveLowLevel(packet);
+				
+				// send corresponding acknowledgement packets. this has to be done during fragmentation, not HL parsing
+				switch (packet.getPacketType()) {
+					case COMMAND:
+						send(new PacketAck(packet.getPacketID()));
+						break;
+					case COMMAND_LOW:
+						send(new PacketAckLow(packet.getPacketID()));
+						break;
+					case PING:
+						send(new PacketPong(packet.getPacketID()));
+						break;
 				}
 				
-				fragmentedPackets.add(packet);
-				
-				// end of fragmented packet set, or not a fragmented packet
-				if (!fragmented) {
-					readPackets(fragmentedPackets);
-					fragmentedPackets.clear();
+				if (packet.getPacketType().isFragmentable()) {
+					// start of fragmented packet set
+					if (packet.isFragmented()) {
+						fragmented = !fragmented;
+					}
+					
+					fragmentedPackets.add(packet);
+					
+					// end of fragmented packet set, or not a fragmented packet
+					if (!fragmented) {
+						readPackets(fragmentedPackets);
+						fragmentedPackets.clear();
+					}
+				} else {
+					packets.add(packet);
+					readPackets(packets);
+					packets.clear();
 				}
-			} else {
-				packets.add(packet);
-				readPackets(packets);
-				packets.clear();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -149,18 +154,20 @@ public class PacketHandler {
 	
 	private Optional<Packet> getPacketFromType(PacketType type) {
 		switch (type) {
-			case ACK:
-				return Optional.of(new PacketAck());
-			case ACK_LOW:
-				return Optional.of(new PacketAckLow());
-			case PING:
-				return Optional.of(new PacketPing());
-			case PONG:
-				return Optional.of(new PacketPong());
+			case VOICE:
+				return Optional.of(new PacketVoice());
 			case COMMAND:
 				return Optional.of(new PacketCommand());
 			case COMMAND_LOW:
 				return Optional.of(new PacketCommandLow());
+			case PING:
+				return Optional.of(new PacketPing());
+			case PONG:
+				return Optional.of(new PacketPong());
+			case ACK:
+				return Optional.of(new PacketAck());
+			case ACK_LOW:
+				return Optional.of(new PacketAckLow());
 			default:
 				return Optional.empty();
 		}

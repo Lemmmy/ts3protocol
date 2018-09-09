@@ -13,6 +13,8 @@ import java.security.NoSuchAlgorithmException;
 public class Identity {
 	private static final byte DEFAULT_LEVEL = 8;
 	
+	private String nickname = "Poopy bot", phoneticNickname = nickname;
+	
 	private KeyPair keyPair;
 	private byte securityLevel;
 	private long keyOffset = -1;

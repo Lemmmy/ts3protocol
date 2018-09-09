@@ -3,6 +3,7 @@ package pw.lemmmy.ts3protocol.client;
 import lombok.Getter;
 import pw.lemmmy.ts3protocol.commands.CommandHandler;
 import pw.lemmmy.ts3protocol.server.Server;
+import pw.lemmmy.ts3protocol.voice.VoiceHandler;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -28,6 +29,7 @@ public class Client implements Runnable {
 	private PacketHandler packetHandler;
 	private CommandHandler commandHandler;
 	private Handshake handshake;
+	private VoiceHandler voiceHandler;
 	
 	public Client(Identity identity, InetAddress host) throws SocketException {
 		this(identity, host, DEFAULT_PORT);
@@ -44,6 +46,9 @@ public class Client implements Runnable {
 		packetHandler = new PacketHandler(this);
 		commandHandler = new CommandHandler();
 		handshake = new Handshake(this);
+		voiceHandler = new VoiceHandler(this);
+		
+		voiceHandler.init();
 		
 		server = new Server(this);
 	}
