@@ -18,6 +18,7 @@ public class Server {
 		initialiseProperties(client);
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void initialiseProperties(Client client) {
 		properties = new PropertyManager(client, null, CommandInitServer.class, CommandNotifyServerEdited.class);
 		
@@ -37,48 +38,43 @@ public class Server {
 		);
 	}
 	
-	public class Name extends StringProperty { public String getName() { return "virtualserver_name"; } }
-	public class PhoneticName extends StringProperty { public String getName() { return "virtualserver_name_phonetic"; } }
-	public class Nickname extends StringProperty { public String getName() { return "virtualserver_nickname"; } }
-	public class WelcomeMessage extends StringProperty { public String getName() { return "virtualserver_welcomemessage"; } }
-	public class Platform extends StringProperty { public String getName() { return "virtualserver_platform"; } }
-	public class Version extends StringProperty { public String getName() { return "virtualserver_version"; } }
+	public class Name extends StringProperty { { name = "virtualserver_name"; } }
+	public class PhoneticName extends StringProperty { { name = "virtualserver_name_phonetic"; } }
+	public class Nickname extends StringProperty { { name = "virtualserver_nickname"; } }
+	public class WelcomeMessage extends StringProperty { { name = "virtualserver_welcomemessage"; } }
+	public class Platform extends StringProperty { { name = "virtualserver_platform"; } }
+	public class Version extends StringProperty { { name = "virtualserver_version"; } }
 	
-	public class ID extends IntProperty { public String getName() { return "virtualserver_id"; } }
-	public class MaxClients extends IntProperty { public String getName() { return "virtualserver_maxclients"; } }
+	public class ID extends IntProperty { { name = "virtualserver_id"; } }
+	public class MaxClients extends IntProperty { { name = "virtualserver_maxclients"; } }
 	
-	public class IP extends InetAddressProperty { public String getName() { return "virtualserver_ip"; } }
-	public class Created extends DateProperty { public String getName() { return "virtualserver_created"; } }
+	public class IP extends InetAddressProperty { { name = "virtualserver_ip"; } }
+	public class Created extends DateProperty { { name = "virtualserver_created"; } }
 	
-	public class DefaultServerGroupID extends IntProperty { public String getName() { return "virtualserver_default_server_group"; } }
-	public class DefaultChannelGroupID extends IntProperty { public String getName() { return "virtualserver_default_channel_group"; } }
+	public class DefaultServerGroupID extends IntProperty { { name = "virtualserver_default_server_group"; } }
+	public class DefaultChannelGroupID extends IntProperty { { name = "virtualserver_default_channel_group"; } }
 	
-	public class DefaultTemporaryChannelDeleteDelay extends IntProperty { public String getName() { return "virtualserver_channel_temp_delete_delay_default"; } }
+	public class DefaultTemporaryChannelDeleteDelay extends IntProperty { { name = "virtualserver_channel_temp_delete_delay_default"; } }
 	
-	public class VoiceEncryptionMode extends EnumProperty<CodecEncryptionMode> {
-		public Class<CodecEncryptionMode> getEnumClass() { return CodecEncryptionMode.class; }
-		public String getName() { return "virtualserver_created"; }
-	}
+	public class VoiceEncryptionMode extends EnumProperty<CodecEncryptionMode> { { enumClass = CodecEncryptionMode.class; name = "virtualserver_created"; } }
 	
-	public class PrioritySpeakerDimModifier extends DoubleProperty { public String getName() { return "virtualserver_priority_speaker_dimm_modificator"; } }
+	public class PrioritySpeakerDimModifier extends DoubleProperty { { name = "virtualserver_priority_speaker_dimm_modificator"; } }
 	
-	public class IconID extends LongProperty { public String getName() { return "virtualserver_icon_id"; } }
+	public class IconID extends LongProperty { { name = "virtualserver_icon_id"; } }
 	
-	public class HostMessage extends StringProperty { public String getName() { return "virtualserver_hostmessage"; } }
+	public class HostMessage extends StringProperty { { name = "virtualserver_hostmessage"; } }
 	public class HostMessageMode extends EnumProperty<pw.lemmmy.ts3protocol.server.HostMessageMode> {
-		public Class<pw.lemmmy.ts3protocol.server.HostMessageMode> getEnumClass() { return pw.lemmmy.ts3protocol.server.HostMessageMode.class; }
-		public String getName() { return "virtualserver_hostmessage_mode"; }
+		{ enumClass = pw.lemmmy.ts3protocol.server.HostMessageMode.class; name = "virtualserver_hostmessage_mode"; }
 	}
 	
-	public class HostBannerURL extends URLProperty { public String getName() { return "virtualserver_hostbanner_url"; } }
-	public class HostBannerGraphicsURL extends URLProperty { public String getName() { return "virtualserver_hostbanner_gfx_url"; } }
-	public class HostBannerGraphicsInterval extends IntProperty { public String getName() { return "virtualserver_hostbanner_gfx_interval"; } }
+	public class HostBannerURL extends URLProperty { { name = "virtualserver_hostbanner_url"; } }
+	public class HostBannerGraphicsURL extends URLProperty { { name = "virtualserver_hostbanner_gfx_url"; } }
+	public class HostBannerGraphicsInterval extends IntProperty { { name = "virtualserver_hostbanner_gfx_interval"; } }
 	public class HostBannerResizeMode extends EnumProperty<pw.lemmmy.ts3protocol.server.HostBannerResizeMode> {
-		public Class<pw.lemmmy.ts3protocol.server.HostBannerResizeMode> getEnumClass() { return pw.lemmmy.ts3protocol.server.HostBannerResizeMode.class; }
-		public String getName() { return "virtualserver_hostbanner_mode"; }
+		{ enumClass = pw.lemmmy.ts3protocol.server.HostBannerResizeMode.class; name = "virtualserver_hostbanner_mode"; }
 	}
 	
-	public class HostButtonTooltip extends StringProperty { public String getName() { return "virtualserver_hostbutton_tooltip"; } }
-	public class HostButtonURL extends URLProperty { public String getName() { return "virtualserver_hostbutton_url"; } }
-	public class HostButtonGraphicsURL extends URLProperty { public String getName() { return "virtualserver_hostbutton_gfx_url"; } }
+	public class HostButtonTooltip extends StringProperty { { name = "virtualserver_hostbutton_tooltip"; } }
+	public class HostButtonURL extends URLProperty { { name = "virtualserver_hostbutton_url"; } }
+	public class HostButtonGraphicsURL extends URLProperty { { name = "virtualserver_hostbutton_gfx_url"; } }
 }

@@ -4,17 +4,17 @@ import java.util.Date;
 import java.util.Map;
 
 public abstract class DateProperty extends Property<Date> {
-	public abstract String getName();
+	protected String name;
 	
 	@Override
 	public void encodeProperty(Map<String, String> arguments) {
 		if (getValue() == null) return;
-		arguments.put(getName(), Long.toString(getValue().getTime() / 1000L));
+		arguments.put(name, Long.toString(getValue().getTime() / 1000L));
 	}
 	
 	@Override
 	public void decodeProperty(Map<String, String> arguments) {
-		if (!arguments.containsKey(getName())) return;
-		setValue(new Date(Long.parseLong(arguments.get(getName())) * 1000L));
+		if (!arguments.containsKey(name)) return;
+		setValue(new Date(Long.parseLong(arguments.get(name)) * 1000L));
 	}
 }

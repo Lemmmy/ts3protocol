@@ -6,22 +6,22 @@ import java.util.Date;
 import java.util.Map;
 
 public abstract class URLProperty extends Property<URL> {
-	public abstract String getName();
+	protected String name;
 	
 	@Override
 	public void encodeProperty(Map<String, String> arguments) {
 		if (getValue() == null) return;
-		arguments.put(getName(), getValue().toString());
+		arguments.put(name, getValue().toString());
 	}
 	
 	@Override
 	public void decodeProperty(Map<String, String> arguments) {
-		if (!arguments.containsKey(getName())) return;
+		if (!arguments.containsKey(name)) return;
 		
 		try {
-			setValue(new URL(arguments.get(getName())));
+			setValue(new URL(arguments.get(name)));
 		} catch (MalformedURLException e) {
-			System.err.println("Error parsing URL from " + getName() + " property");
+			System.err.println("Error parsing URL from " + name + " property");
 			e.printStackTrace();
 		}
 	}

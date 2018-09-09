@@ -3,19 +3,19 @@ package pw.lemmmy.ts3protocol.utils.properties;
 import java.util.Map;
 
 public abstract class EnumProperty<E extends Enum> extends Property<E> {
-	public abstract Class<E> getEnumClass();
+	protected Class<E> enumClass;
 	
-	public abstract String getName();
+	protected String name;
 	
 	@Override
 	public void encodeProperty(Map<String, String> arguments) {
-		arguments.put(getName(), Integer.toString(getValue().ordinal()));
+		arguments.put(name, Integer.toString(getValue().ordinal()));
 	}
 	
 	@Override
 	public void decodeProperty(Map<String, String> arguments) {
-		if (!arguments.containsKey(getName())) return;
-		setValue(parseEnumProperty(getEnumClass(), arguments, getName()));
+		if (!arguments.containsKey(name)) return;
+		setValue(parseEnumProperty(enumClass, arguments, name));
 	}
 	
 	public static <E> E parseEnumProperty(Class<E> enumClass, int value) {
