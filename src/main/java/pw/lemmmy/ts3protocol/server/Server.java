@@ -1,7 +1,10 @@
 package pw.lemmmy.ts3protocol.server;
 
 import lombok.Getter;
+import pw.lemmmy.ts3protocol.channels.Channel;
 import pw.lemmmy.ts3protocol.client.Client;
+import pw.lemmmy.ts3protocol.commands.CommandHandler;
+import pw.lemmmy.ts3protocol.commands.channels.CommandChannelList;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientEnterView;
 import pw.lemmmy.ts3protocol.commands.handshake.CommandInitServer;
 import pw.lemmmy.ts3protocol.commands.server.CommandNotifyServerEdited;
@@ -16,6 +19,7 @@ public class Server {
 	private Client client;
 	
 	private Map<Short, User> users = new HashMap<>();
+	private Map<Short, Channel> channels = new HashMap<>();
 	
 	public final PropertyManager props;
 	
@@ -47,15 +51,27 @@ public class Server {
 	}
 	
 	private void addCommandListeners() {
-		client.getCommandHandler().addCommandListener(CommandNotifyClientEnterView.class, c -> c.getArgumentSets().forEach(arguments -> {
-			if (!arguments.containsKey("clid")) return;
-			short clid = Short.parseShort(arguments.get("clid"));
+		CommandHandler handler = client.getCommandHandler();
+		
+		handler.addCommandListener(CommandNotifyClientEnterView.class, c -> c.getArgumentSets().forEach(args -> {
+			if (!args.containsKey("clid")) return;
+			short clid = Short.parseShort(args.get("clid"));
 			
 			if (!users.containsKey(clid)) {
-				User user = new User(client, this);
-				user.setID(clid);
+				User user = new User(client, this).setID(clid);
 				addUser(user);
-				user.props.readFromArgumentSet(c, arguments);
+				user.props.readFromArgumentSet(c, args);
+			}
+		}));
+		
+		handler.addCommandListener(CommandChannelList.class, c -> c.getArgumentSets().forEach(args -> {
+			if (!args.containsKey("cid")) return;
+			short cid = Short.parseShort(args.get("cid"));
+			
+			if (!channels.containsKey(cid)) {
+				Channel channel = new Channel(client, this).setID(cid);
+				addChannel(channel);
+				channel.props.readFromArgumentSet(c, args);
 			}
 		}));
 	}
@@ -66,6 +82,14 @@ public class Server {
 	
 	public User getUser(short id) {
 		return users.get(id);
+	}
+	
+	public void addChannel(Channel channel) {
+		channels.put(channel.getID(), channel);
+	}
+	
+	public Channel getChannel(short id) {
+		return channels.get(id);
 	}
 	
 	public class Name extends StringProperty {{ name = "virtualserver_name"; }}

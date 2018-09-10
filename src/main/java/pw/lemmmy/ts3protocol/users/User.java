@@ -13,7 +13,6 @@ import pw.lemmmy.ts3protocol.utils.properties.StringProperty;
 
 @Getter
 public class User {
-	private Client client;
 	protected Server server;
 	public UserPropertyManager props;
 	
@@ -27,16 +26,11 @@ public class User {
 	}
 	
 	public void setClient(Client client) {
-		this.client = client;
-		
-		System.out.println("Setting client");
-		
 		props = new UserPropertyManager(id, client, CommandClientUpdate.class, CommandNotifyClientEnterView.class, CommandNotifyClientUpdated.class);
 		initialiseProperties();
 	}
 	
 	private void initialiseProperties() {
-		System.out.println("Initialising properties");
 		props.add(
 			new Nickname(), new PhoneticNickname(),
 			new ID(), new UUID(), new DatabaseID(), new MyTeamspeakID(),
@@ -57,9 +51,10 @@ public class User {
 		return id;
 	}
 	
-	public void setID(short id) {
+	public User setID(short id) {
 		this.id = id;
 		props.setClientID(id);
+		return this;
 	}
 	
 	public class Nickname extends StringProperty {{ name = "client_nickname"; }}

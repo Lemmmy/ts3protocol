@@ -1,6 +1,8 @@
 package pw.lemmmy.ts3protocol.client;
 
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import pw.lemmmy.ts3protocol.crypto.EC;
 import pw.lemmmy.ts3protocol.crypto.HashCash;
 
@@ -10,10 +12,12 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 
 @Getter
+@Accessors(chain = true)
 public class Identity {
 	private static final byte DEFAULT_LEVEL = 8;
 	
-	private String nickname = "Poopy bot", phoneticNickname = nickname;
+	@Setter private String nickname = "TeamSpeakUser";
+	@Setter private String phoneticNickname = nickname;
 	
 	private KeyPair keyPair;
 	private byte securityLevel;
