@@ -3,8 +3,9 @@ package pw.lemmmy.ts3protocol.server;
 import lombok.Getter;
 import pw.lemmmy.ts3protocol.channels.Channel;
 import pw.lemmmy.ts3protocol.client.Client;
-import pw.lemmmy.ts3protocol.commands.CommandHandler;
+import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelList;
+import pw.lemmmy.ts3protocol.commands.channels.CommandNotifyChannelCreated;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientEnterView;
 import pw.lemmmy.ts3protocol.commands.handshake.CommandInitServer;
 import pw.lemmmy.ts3protocol.commands.server.CommandNotifyServerEdited;
@@ -51,29 +52,27 @@ public class Server {
 	}
 	
 	private void addCommandListeners() {
-		CommandHandler handler = client.getCommandHandler();
+		addElementAddedListener(CommandNotifyClientEnterView.class, "clid", this::handleUserDiscovered);
 		
-		handler.addCommandListener(CommandNotifyClientEnterView.class, c -> c.getArgumentSets().forEach(args -> {
-			if (!args.containsKey("clid")) return;
-			short clid = Short.parseShort(args.get("clid"));
-			
-			if (!users.containsKey(clid)) {
-				User user = new User(client, this).setID(clid);
-				addUser(user);
-				user.props.readFromArgumentSet(c, args);
-			}
+		addElementAddedListener(CommandChannelList.class, "cid", this::handleChannelDiscovered);
+		addElementAddedListener(CommandNotifyChannelCreated.class, "cid", this::handleChannelDiscovered);
+	}
+	
+	// TODO: generify further to prevent duplication
+	private void addElementAddedListener(Class<? extends Command> commandClass, String idParameter, ElementDiscoveredHandler handler) {
+		client.getCommandHandler().addCommandListener(commandClass, c -> c.getArgumentSets().forEach(args -> {
+			if (!args.containsKey(idParameter)) return;
+			short id = Short.parseShort(args.get(idParameter));
+			handler.handle(c, args, id);
 		}));
-		
-		handler.addCommandListener(CommandChannelList.class, c -> c.getArgumentSets().forEach(args -> {
-			if (!args.containsKey("cid")) return;
-			short cid = Short.parseShort(args.get("cid"));
-			
-			if (!channels.containsKey(cid)) {
-				Channel channel = new Channel(client, this).setID(cid);
-				addChannel(channel);
-				channel.props.readFromArgumentSet(c, args);
-			}
-		}));
+	}
+	
+	private void handleUserDiscovered(Command command, Map<String, String> args, short clientID) {
+		if (!users.containsKey(clientID)) {
+			User user = new User(client, this).setID(clientID);
+			addUser(user);
+			user.props.readFromArgumentSet(command, args);
+		}
 	}
 	
 	public void addUser(User user) {
@@ -82,6 +81,14 @@ public class Server {
 	
 	public User getUser(short id) {
 		return users.get(id);
+	}
+	
+	private void handleChannelDiscovered(Command command, Map<String, String> args, short channelID) {
+		if (!channels.containsKey(channelID)) {
+			Channel channel = new Channel(client, this).setID(channelID);
+			addChannel(channel);
+			channel.props.readFromArgumentSet(command, args);
+		}
 	}
 	
 	public void addChannel(Channel channel) {
@@ -131,4 +138,9 @@ public class Server {
 	public class HostButtonTooltip extends StringProperty {{ name = "virtualserver_hostbutton_tooltip"; }}
 	public class HostButtonURL extends URLProperty {{ name = "virtualserver_hostbutton_url"; }}
 	public class HostButtonGraphicsURL extends URLProperty {{ name = "virtualserver_hostbutton_gfx_url"; }}
+	
+	@FunctionalInterface
+	private interface ElementDiscoveredHandler {
+		void handle(Command command, Map<String, String> args, short clientID);
+	}
 }
