@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.util.encoders.Base64;
 import pw.lemmmy.ts3protocol.commands.CommandHandler;
+import pw.lemmmy.ts3protocol.commands.channels.CommandChannelSubscribeAll;
 import pw.lemmmy.ts3protocol.commands.handshake.*;
 import pw.lemmmy.ts3protocol.crypto.ASN;
 import pw.lemmmy.ts3protocol.crypto.EC;
@@ -22,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 public class Handshake {
@@ -145,5 +147,7 @@ public class Handshake {
 		client.props.readFromCommand(initServer);
 		client.getServer().addUser(client);
 		handler.startPinging();
+		
+		handler.send(new PacketCommand(new CommandChannelSubscribeAll()));
 	}
 }

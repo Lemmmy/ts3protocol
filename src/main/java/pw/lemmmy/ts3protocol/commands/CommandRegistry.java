@@ -1,6 +1,6 @@
 package pw.lemmmy.ts3protocol.commands;
 
-import pw.lemmmy.ts3protocol.commands.channels.CommandChannelList;
+import pw.lemmmy.ts3protocol.commands.channels.*;
 import pw.lemmmy.ts3protocol.commands.clients.CommandClientUpdate;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientEnterView;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientUpdated;
@@ -32,6 +32,10 @@ public class CommandRegistry {
 		
 		// channels
 		commands.put("channellist", CommandChannelList::new);
+		commands.put("channelsubscribeall", CommandChannelSubscribeAll::new);
+		commands.put("notifychannelchanged", CommandNotifyChannelChanged::new);
+		commands.put("notifychanneledited", CommandNotifyChannelEdited::new);
+		commands.put("notifychanneldescriptionchanged", CommandNotifyChannelDescriptionChanged::new);
 		
 		// messages
 		commands.put("sendtextmessage", CommandSendTextMessage::new);

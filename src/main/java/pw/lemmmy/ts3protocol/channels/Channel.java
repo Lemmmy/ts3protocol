@@ -2,6 +2,8 @@ package pw.lemmmy.ts3protocol.channels;
 
 import lombok.Getter;
 import pw.lemmmy.ts3protocol.client.Client;
+import pw.lemmmy.ts3protocol.commands.channels.CommandNotifyChannelChanged;
+import pw.lemmmy.ts3protocol.commands.channels.CommandNotifyChannelEdited;
 import pw.lemmmy.ts3protocol.server.Server;
 import pw.lemmmy.ts3protocol.utils.properties.*;
 import pw.lemmmy.ts3protocol.voice.codecs.CodecType;
@@ -15,10 +17,14 @@ public class Channel {
 	
 	private short id = 0;
 	
+	@SuppressWarnings("unchecked")
 	public Channel(Client client, Server server) {
 		this.server = server;
 		
-		props = new ChannelPropertyManager(id, client, null);
+		props = new ChannelPropertyManager(
+			id, client, null,
+			CommandNotifyChannelChanged.class, CommandNotifyChannelEdited.class
+		);
 		initialiseProperties();
 	}
 	
