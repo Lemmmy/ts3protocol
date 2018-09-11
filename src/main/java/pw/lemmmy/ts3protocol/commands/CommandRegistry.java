@@ -3,6 +3,7 @@ package pw.lemmmy.ts3protocol.commands;
 import pw.lemmmy.ts3protocol.commands.channels.*;
 import pw.lemmmy.ts3protocol.commands.clients.CommandClientUpdate;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientEnterView;
+import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientLeftView;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientUpdated;
 import pw.lemmmy.ts3protocol.commands.handshake.*;
 import pw.lemmmy.ts3protocol.commands.messages.CommandNotifyTextMessage;
@@ -28,6 +29,7 @@ public class CommandRegistry {
 		// clients
 		commands.put("clientupdate", CommandClientUpdate::new);
 		commands.put("notifycliententerview", CommandNotifyClientEnterView::new);
+		commands.put("notifyclientleftview", CommandNotifyClientLeftView::new);
 		commands.put("notifyclientupdated", CommandNotifyClientUpdated::new);
 		
 		// channels

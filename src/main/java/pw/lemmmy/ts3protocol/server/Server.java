@@ -7,6 +7,7 @@ import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelList;
 import pw.lemmmy.ts3protocol.commands.channels.CommandNotifyChannelCreated;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientEnterView;
+import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientLeftView;
 import pw.lemmmy.ts3protocol.commands.handshake.CommandInitServer;
 import pw.lemmmy.ts3protocol.commands.server.CommandNotifyServerEdited;
 import pw.lemmmy.ts3protocol.users.User;
@@ -52,14 +53,15 @@ public class Server {
 	}
 	
 	private void addCommandListeners() {
-		addElementAddedListener(CommandNotifyClientEnterView.class, "clid", this::handleUserDiscovered);
+		addElementListener(CommandNotifyClientEnterView.class, "clid", this::handleUserDiscovered);
+		addElementListener(CommandNotifyClientLeftView.class, "clid", this::handleUserRemoved);
 		
-		addElementAddedListener(CommandChannelList.class, "cid", this::handleChannelDiscovered);
-		addElementAddedListener(CommandNotifyChannelCreated.class, "cid", this::handleChannelDiscovered);
+		addElementListener(CommandChannelList.class, "cid", this::handleChannelDiscovered);
+		addElementListener(CommandNotifyChannelCreated.class, "cid", this::handleChannelDiscovered);
 	}
 	
 	// TODO: generify further to prevent duplication
-	private void addElementAddedListener(Class<? extends Command> commandClass, String idParameter, ElementDiscoveredHandler handler) {
+	private void addElementListener(Class<? extends Command> commandClass, String idParameter, ElementDiscoveredHandler handler) {
 		client.commandHandler.addCommandListener(commandClass, c -> c.getArgumentSets().forEach(args -> {
 			if (!args.containsKey(idParameter)) return;
 			short id = Short.parseShort(args.get(idParameter));
@@ -73,6 +75,11 @@ public class Server {
 			addUser(user);
 			user.props.readFromArgumentSet(command, args);
 		}
+	}
+	
+	private void handleUserRemoved(Command command, Map<String, String> args, short clientID) {
+		if (!users.containsKey(clientID)) return;
+		users.remove(clientID);
 	}
 	
 	public void addUser(User user) {
