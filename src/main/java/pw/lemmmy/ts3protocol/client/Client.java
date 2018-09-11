@@ -4,7 +4,6 @@ import lombok.Getter;
 import pw.lemmmy.ts3protocol.commands.CommandHandler;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelListFinished;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelSubscribeAll;
-import pw.lemmmy.ts3protocol.packets.command.PacketCommand;
 import pw.lemmmy.ts3protocol.server.Server;
 import pw.lemmmy.ts3protocol.users.User;
 import pw.lemmmy.ts3protocol.voice.VoiceHandler;

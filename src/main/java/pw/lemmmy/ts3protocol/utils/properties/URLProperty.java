@@ -2,7 +2,6 @@ package pw.lemmmy.ts3protocol.utils.properties;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Date;
 import java.util.Map;
 
 public abstract class URLProperty extends Property<URL> {

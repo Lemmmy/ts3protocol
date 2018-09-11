@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.util.encoders.Hex;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.client.ConnectionParameters;
 import pw.lemmmy.ts3protocol.crypto.CachedKey;
@@ -13,7 +12,6 @@ import pw.lemmmy.ts3protocol.crypto.Hash;
 import pw.lemmmy.ts3protocol.utils.QuickLZ;
 
 import java.io.*;
-import java.util.Arrays;
 
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
