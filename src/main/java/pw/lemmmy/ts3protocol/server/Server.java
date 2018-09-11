@@ -6,6 +6,7 @@ import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelList;
 import pw.lemmmy.ts3protocol.commands.channels.CommandNotifyChannelCreated;
+import pw.lemmmy.ts3protocol.commands.channels.CommandNotifyChannelDeleted;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientEnterView;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientLeftView;
 import pw.lemmmy.ts3protocol.commands.handshake.CommandInitServer;
@@ -58,6 +59,7 @@ public class Server {
 		
 		addElementListener(CommandChannelList.class, "cid", this::handleChannelDiscovered);
 		addElementListener(CommandNotifyChannelCreated.class, "cid", this::handleChannelDiscovered);
+		addElementListener(CommandNotifyChannelDeleted.class, "cid", this::handleChannelRemoved);
 	}
 	
 	// TODO: generify further to prevent duplication
@@ -96,6 +98,11 @@ public class Server {
 			addChannel(channel);
 			channel.props.readFromArgumentSet(command, args);
 		}
+	}
+	
+	private void handleChannelRemoved(Command command, Map<String, String> args, short channelID) {
+		if (!channels.containsKey(channelID)) return;
+		channels.remove(channelID);
 	}
 	
 	public void addChannel(Channel channel) {

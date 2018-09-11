@@ -39,6 +39,7 @@ public class CommandRegistry {
 		commands.put("notifychannelcreated", CommandNotifyChannelCreated::new);
 		commands.put("notifychannelchanged", CommandNotifyChannelChanged::new);
 		commands.put("notifychanneledited", CommandNotifyChannelEdited::new);
+		commands.put("notifychanneldeleted", CommandNotifyChannelDeleted::new);
 		commands.put("notifychanneldescriptionchanged", CommandNotifyChannelDescriptionChanged::new);
 		
 		// messages
