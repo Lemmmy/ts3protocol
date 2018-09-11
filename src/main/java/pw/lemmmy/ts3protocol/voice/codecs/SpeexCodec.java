@@ -18,7 +18,7 @@ public class SpeexCodec extends VoiceCodec {
 	@Override
 	public void init() {
 		decoder = new SpeexDecoder();
-		decoder.init(mode, getSampleRate(), getChannels(), false);
+		decoder.init(mode, sampleRate, channels, false);
 	}
 	
 	@Override

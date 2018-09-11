@@ -6,7 +6,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public abstract class VoiceCodec {
-	private int sampleRate, channels;
+	protected final int sampleRate, channels;
 	
 	public abstract void init();
 	
