@@ -16,12 +16,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 public class Client extends User {
 	public static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
 	
 	private static final short DEFAULT_PORT = 9987;
+	private static final int CONNECT_TIMEOUT_SECONDS = 5; // TODO: configurable
 	
 	private InetAddress host;
 	private short port;
@@ -71,6 +73,13 @@ public class Client extends User {
 	}
 	
 	public void run() {
+		EXECUTOR.schedule(() -> {
+			if (!clientReady) {
+				System.err.println("Client was not ready within " + CONNECT_TIMEOUT_SECONDS + " seconds. Please retry.");
+				System.exit(1);
+			}
+		}, CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+		
 		EXECUTOR.submit(() -> {
 			try {
 				handshake.beginLowLevelHandshake();
