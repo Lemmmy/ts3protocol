@@ -113,8 +113,8 @@ public class User {
 	public class ServerQuery extends BooleanProperty  {{ name = "client_type"; }}
 	public class NeededServerQueryViewPower extends IntProperty  {{ name = "client_needed_serverquery_view_power"; }}
 	
-	// TODO: is this a string? it may be a list of some sort
-	public class ServerGroups extends StringProperty  {{ name = "client_channel_servergroups"; }}
+	// TODO: this is CSV; make a CSV type
+	public class ServerGroups extends StringProperty  {{ name = "client_servergroups"; }}
 	public class ChannelGroupID extends IntProperty  {{ name = "client_channel_group_id"; }}
 	public class ChannelGroupInheritedID extends IntProperty  {{ name = "client_channel_group_inherited_channel_id"; }}
 }
