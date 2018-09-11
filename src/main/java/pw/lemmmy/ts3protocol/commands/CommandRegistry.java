@@ -1,10 +1,7 @@
 package pw.lemmmy.ts3protocol.commands;
 
 import pw.lemmmy.ts3protocol.commands.channels.*;
-import pw.lemmmy.ts3protocol.commands.clients.CommandClientUpdate;
-import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientEnterView;
-import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientLeftView;
-import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientUpdated;
+import pw.lemmmy.ts3protocol.commands.clients.*;
 import pw.lemmmy.ts3protocol.commands.handshake.*;
 import pw.lemmmy.ts3protocol.commands.messages.CommandNotifyTextMessage;
 import pw.lemmmy.ts3protocol.commands.messages.CommandSendTextMessage;
@@ -31,6 +28,7 @@ public class CommandRegistry {
 		commands.put("notifycliententerview", CommandNotifyClientEnterView::new);
 		commands.put("notifyclientleftview", CommandNotifyClientLeftView::new);
 		commands.put("notifyclientupdated", CommandNotifyClientUpdated::new);
+		commands.put("notifyclientmoved", CommandNotifyClientMoved::new);
 		
 		// channels
 		commands.put("channellist", CommandChannelList::new);

@@ -5,6 +5,7 @@ import pw.lemmmy.ts3protocol.channels.Channel;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.commands.clients.CommandClientUpdate;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientEnterView;
+import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientMoved;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientUpdated;
 import pw.lemmmy.ts3protocol.server.Server;
 import pw.lemmmy.ts3protocol.utils.properties.*;
@@ -27,7 +28,11 @@ public class User {
 	
 	@SuppressWarnings("unchecked")
 	public void setClient(Client client) {
-		props = new UserPropertyManager(id, client, CommandClientUpdate.class, CommandNotifyClientEnterView.class, CommandNotifyClientUpdated.class);
+		props = new UserPropertyManager(
+			id, client,
+			CommandClientUpdate.class, CommandNotifyClientEnterView.class, CommandNotifyClientUpdated.class,
+			CommandNotifyClientMoved.class
+		);
 		initialiseProperties();
 	}
 	
