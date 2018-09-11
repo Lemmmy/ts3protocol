@@ -1,15 +1,15 @@
 package pw.lemmmy.ts3protocol.users;
 
 import lombok.Getter;
+import pw.lemmmy.ts3protocol.channels.Channel;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.commands.clients.CommandClientUpdate;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientEnterView;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientUpdated;
 import pw.lemmmy.ts3protocol.server.Server;
-import pw.lemmmy.ts3protocol.utils.properties.BooleanProperty;
-import pw.lemmmy.ts3protocol.utils.properties.IntProperty;
-import pw.lemmmy.ts3protocol.utils.properties.LongProperty;
-import pw.lemmmy.ts3protocol.utils.properties.StringProperty;
+import pw.lemmmy.ts3protocol.utils.properties.*;
+
+import java.util.Optional;
 
 @Getter
 public class User {
@@ -25,6 +25,7 @@ public class User {
 		setClient(client);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void setClient(Client client) {
 		props = new UserPropertyManager(id, client, CommandClientUpdate.class, CommandNotifyClientEnterView.class, CommandNotifyClientUpdated.class);
 		initialiseProperties();
@@ -35,6 +36,7 @@ public class User {
 			new Nickname(), new PhoneticNickname(),
 			new ID(), new UUID(), new DatabaseID(), new MyTeamspeakID(),
 			new Description(), new Country(), new AvatarID(), new IconID(), new Badges(), new Integrations(), new Metadata(),
+			new ChannelID(),
 			new InputMuted(), new OutputMuted(), new OutputOnlyMuted(), new InputAvailable(), new OutputAvailable(),
 			new Away(), new AwayMessage(),
 			new UnreadMessages(),
@@ -57,6 +59,13 @@ public class User {
 		return this;
 	}
 	
+	public Optional<Channel> getChannel() {
+		if (props == null || props.get(ChannelID.class) == null) return Optional.empty();
+		short channelID = props.get(ChannelID.class);
+		if (channelID <= 0) return Optional.empty();
+		return Optional.ofNullable(server.getChannel(channelID));
+	}
+	
 	public class Nickname extends StringProperty {{ name = "client_nickname"; }}
 	public class PhoneticNickname extends StringProperty {{ name = "client_nickname_phonetic"; }}
 	
@@ -65,6 +74,13 @@ public class User {
 	public class UUID extends StringProperty {{ name = "client_unique_identifier"; }}
 	public class DatabaseID extends IntProperty {{ name = "client_database_id"; }}
 	public class MyTeamspeakID extends StringProperty {{ name = "client_myteamspeak_id"; }}
+	
+	/*
+	  TODO: this is not necessarily the user's channel ID, just the target channel of a command.
+			it may be worth making this only effective for the notifycliententerview and
+			notifyclientmoved commands
+	*/
+	public class ChannelID extends ShortProperty {{ name = "ctid"; }}
 	
 	public class Description extends StringProperty {{ name = "client_description"; }}
 	public class Country extends StringProperty {{ name = "client_country"; }}
