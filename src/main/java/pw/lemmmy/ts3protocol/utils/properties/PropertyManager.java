@@ -31,7 +31,7 @@ public class PropertyManager {
 		this.updateCommand = updateCommand;
 		
 		notifyCommands.addAll(Arrays.asList(notifyHandlers));
-		notifyCommands.forEach(n -> client.getCommandHandler().addCommandListener(n, this::readFromCommand));
+		notifyCommands.forEach(n -> client.commandHandler.addCommandListener(n, this::readFromCommand));
 	}
 	
 	public <T> void addChangeListener(Class<? extends Property<T>> property, ChangeListener<T> listener) {
@@ -85,7 +85,7 @@ public class PropertyManager {
 					.collect(Collectors.toList())
 			);
 			
-			client.getPacketHandler().send(new PacketCommand(command));
+			client.packetHandler.send(new PacketCommand(command));
 		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
 			e.printStackTrace();
 		}

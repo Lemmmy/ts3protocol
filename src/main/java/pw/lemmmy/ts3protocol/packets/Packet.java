@@ -29,7 +29,7 @@ public class Packet {
 	protected byte[] data;
 	
 	public void read(Client client, LowLevelPacket[] packets) throws IOException {
-		ConnectionParameters params = client.getParams();
+		ConnectionParameters params = client.params;
 		
 		macs = new byte[packets.length][];
 		packetIDs = new short[packets.length];
@@ -55,7 +55,7 @@ public class Packet {
 						DataOutputStream headerDOS = new DataOutputStream(headerBOS)
 					) {
 						byte[][] keyNonce =
-							client.getPacketHandler().shouldEncryptPackets() ? createKeyNonce(client, packet.packetID, generationID) : null;
+							client.packetHandler.shouldEncryptPackets() ? createKeyNonce(client, packet.packetID, generationID) : null;
 						
 						packet.writeMeta(headerDOS);
 						headerDOS.flush();
@@ -114,8 +114,8 @@ public class Packet {
 	protected void readData(Client client, DataInputStream dis) throws IOException {}
 	
 	public LowLevelPacket[] write(Client client) {
-		ConnectionParameters params = client.getParams();
-		boolean shouldEncrypt = client.getPacketHandler().shouldEncryptPackets();
+		ConnectionParameters params = client.params;
+		boolean shouldEncrypt = client.packetHandler.shouldEncryptPackets();
 		
 		try (
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -201,7 +201,7 @@ public class Packet {
 	protected void writeData(Client client, DataOutputStream os) throws IOException {}
 	
 	private byte[][] createKeyNonce(Client client, short packetID, int generationID) {
-		ConnectionParameters params = client.getParams();
+		ConnectionParameters params = client.params;
 		val keyCache = direction == SERVER_TO_CLIENT ? params.getKeyCacheIncoming() : params.getKeyCacheOutgoing();
 		
 		if (!keyCache.containsKey(packetType) || keyCache.get(packetType).getGenerationID() != generationID) {

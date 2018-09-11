@@ -33,6 +33,6 @@ public class PacketVoice extends Packet {
 		voiceData = new byte[this.data.length - (direction == PacketDirection.SERVER_TO_CLIENT ? 5 : 3)];
 		dis.read(voiceData);
 		
-		client.getVoiceHandler().handleAudioPacket(this);
+		client.voiceHandler.handleAudioPacket(this);
 	}
 }

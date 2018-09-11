@@ -60,7 +60,7 @@ public class Server {
 	
 	// TODO: generify further to prevent duplication
 	private void addElementAddedListener(Class<? extends Command> commandClass, String idParameter, ElementDiscoveredHandler handler) {
-		client.getCommandHandler().addCommandListener(commandClass, c -> c.getArgumentSets().forEach(args -> {
+		client.commandHandler.addCommandListener(commandClass, c -> c.getArgumentSets().forEach(args -> {
 			if (!args.containsKey(idParameter)) return;
 			short id = Short.parseShort(args.get(idParameter));
 			handler.handle(c, args, id);

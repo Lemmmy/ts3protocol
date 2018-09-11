@@ -47,7 +47,7 @@ public class PacketCommand extends Packet {
 			System.err.println("Don't know how to handle command " + commandName);
 		} else {
 			command.decode(data.replaceFirst(commandName + " ", ""));
-			client.getCommandHandler().handleCommand(command);
+			client.commandHandler.handleCommand(command);
 		}
 	}
 }

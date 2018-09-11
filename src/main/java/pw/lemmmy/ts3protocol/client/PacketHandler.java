@@ -37,7 +37,7 @@ public class PacketHandler {
 	
 	public PacketHandler(Client client) {
 		this.client = client;
-		this.params = client.getParams();
+		this.params = client.params;
 		this.socket = client.getSocket();
 	}
 	
