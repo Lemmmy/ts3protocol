@@ -136,7 +136,8 @@ public class Handshake {
 			.setVersion(Version.DEFAULT_VERSION)
 			.setHardwareID(DEFAULT_HWID)
 			.setKeyOffset(identity.getKeyOffset())
-			.setDefaultChannel(identity.getDefaultChannel());
+			.setDefaultChannel(identity.getDefaultChannel())
+			.setDefaultChannelPassword(identity.getDefaultChannelPassword());
 		
 		handler.send(new PacketCommand(init));
 	}
