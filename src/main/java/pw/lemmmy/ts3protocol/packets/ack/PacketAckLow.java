@@ -11,7 +11,7 @@ public class PacketAckLow extends PacketAcknowledgement {
 		super();
 	}
 	
-	public PacketAckLow(short packetID) {
+	public PacketAckLow(int packetID) {
 		super(packetID);
 	}
 }

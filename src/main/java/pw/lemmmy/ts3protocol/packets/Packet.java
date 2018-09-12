@@ -21,7 +21,7 @@ import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
 public class Packet {
 	protected PacketDirection direction;
 	protected byte[][] macs;
-	protected short[] packetIDs;
+	protected int[] packetIDs;
 	protected PacketType packetType;
 	protected boolean unencrypted = true, compressed, newProtocol;
 	protected byte[] data;
@@ -30,7 +30,7 @@ public class Packet {
 		ConnectionParameters params = client.params;
 		
 		macs = new byte[packets.length][];
-		packetIDs = new short[packets.length];
+		packetIDs = new int[packets.length];
 		
 		unencrypted = packets[0].unencrypted;
 		compressed = packets[0].compressed;
@@ -139,9 +139,9 @@ public class Packet {
 			packet.setDirection(direction);
 			int packetSize = i == packetCount - 1 ? compressedData.length % fragmentedDataSize : fragmentedDataSize;
 			
-			int id = params.incrementPacketCounter(packetType, CLIENT_TO_SERVER);
+			int id = params.incrementPacketCounter(packetType);
 			int generationID = params.getPacketGenerationCounterOutgoing().get(packetType);
-			if (id != -1) packet.setPacketID((short) id);
+			if (id != -1) packet.setPacketID(id);
 			
 			packet.packetType = packetType;
 			
@@ -170,7 +170,7 @@ public class Packet {
 					ByteArrayOutputStream headerBOS = new ByteArrayOutputStream(CLIENT_TO_SERVER.getMetaSize());
 					DataOutputStream headerDOS = new DataOutputStream(headerBOS)
 				) {
-					byte[][] keyNonce = shouldEncrypt ? createKeyNonce(client, (short) id, generationID) : null;
+					byte[][] keyNonce = shouldEncrypt ? createKeyNonce(client, id, generationID) : null;
 					
 					packet.writeMeta(headerDOS);
 					
@@ -198,7 +198,7 @@ public class Packet {
 	
 	protected void writeData(Client client, DataOutputStream os) throws IOException {}
 	
-	private byte[][] createKeyNonce(Client client, short packetID, int generationID) {
+	private byte[][] createKeyNonce(Client client, int packetID, int generationID) {
 		ConnectionParameters params = client.params;
 		val keyCache = direction == SERVER_TO_CLIENT ? params.getKeyCacheIncoming() : params.getKeyCacheOutgoing();
 		

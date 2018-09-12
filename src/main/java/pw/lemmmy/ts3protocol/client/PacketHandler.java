@@ -122,7 +122,7 @@ public class PacketHandler {
 			socket.receive(dp);
 			packet.read(dis, dp.getLength());
 			
-			params.incrementPacketCounter(packet.getPacketType(), SERVER_TO_CLIENT);
+			params.setPacketCounter(packet.getPacketID(), packet.getPacketType());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

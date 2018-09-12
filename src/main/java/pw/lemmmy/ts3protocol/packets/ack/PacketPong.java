@@ -12,7 +12,7 @@ public class PacketPong extends PacketAcknowledgement {
 		super();
 	}
 	
-	public PacketPong(short packetID) {
+	public PacketPong(int packetID) {
 		super(packetID);
 	}
 }

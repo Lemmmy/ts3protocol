@@ -4,14 +4,11 @@ import lombok.Getter;
 import lombok.Setter;
 import pw.lemmmy.ts3protocol.crypto.CachedKey;
 import pw.lemmmy.ts3protocol.crypto.Crypto;
-import pw.lemmmy.ts3protocol.packets.PacketDirection;
 import pw.lemmmy.ts3protocol.packets.PacketType;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
 
 @Getter
 public class ConnectionParameters {
@@ -49,18 +46,32 @@ public class ConnectionParameters {
 		countingPackets = true;
 	}
 	
-	public int incrementPacketCounter(PacketType type, PacketDirection direction) {
-		Map<PacketType, Integer> counter 	= direction == SERVER_TO_CLIENT
-											? packetIDCounterIncoming : packetIDCounterOutgoing;
-		Map<PacketType, Integer> generation	= direction == SERVER_TO_CLIENT
-										 	? packetGenerationCounterIncoming : packetGenerationCounterOutgoing;
+	public int setPacketCounter(int value, PacketType type) {
+		Map<PacketType, Integer> counter 	= packetIDCounterIncoming;
+		Map<PacketType, Integer> generation	= packetGenerationCounterIncoming;
+		
+		if (countingPackets) {
+			int current = counter.get(type);
+			counter.put(type, value);
+			
+			if (current == 65535 && value == 0) {
+				generation.put(type, generation.get(type) + 1);
+			}
+			
+			return counter.get(type);
+		} else {
+			return -1;
+		}
+	}
+	
+	public int incrementPacketCounter(PacketType type) {
+		Map<PacketType, Integer> counter 	= packetIDCounterOutgoing;
+		Map<PacketType, Integer> generation	= packetGenerationCounterOutgoing;
 		
 		if (countingPackets) {
 			int current = counter.get(type);
 			
 			if (current >= 65535) {
-				System.out.println("Generation counter incremented for packet type " + type.name()); // TODO: debug
-				
 				counter.put(type, 0);
 				generation.put(type, generation.get(type) + 1);
 			} else {

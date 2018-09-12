@@ -11,7 +11,7 @@ public class PacketAck extends PacketAcknowledgement {
 		super();
 	}
 	
-	public PacketAck(short packetID) {
+	public PacketAck(int packetID) {
 		super(packetID);
 	}
 }

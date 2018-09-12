@@ -19,7 +19,7 @@ public class LowLevelPacket {
 	
 	protected PacketDirection direction;
 	protected byte[] mac;
-	protected short packetID, clientID;
+	protected int packetID, clientID;
 	protected PacketType packetType;
 	protected boolean unencrypted = true, compressed, newProtocol, fragmented, midFragmented;
 	protected byte[] data;
@@ -29,7 +29,7 @@ public class LowLevelPacket {
 		mac = new byte[8];
 		is.read(mac);
 		
-		/* Packet ID */ packetID = is.readShort();
+		/* Packet ID */ packetID = is.readShort() & 0xFFFF;
 		
 		/* Packet Type + Flags */
 		byte packetTypeByte = is.readByte();

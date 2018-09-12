@@ -14,7 +14,7 @@ public abstract class PacketAcknowledgement extends Packet {
 		unencrypted = false;
 	}
 	
-	private short packetID;
+	private int packetID;
 	
 	public PacketAcknowledgement() {}
 	
@@ -25,6 +25,6 @@ public abstract class PacketAcknowledgement extends Packet {
 	
 	@Override
 	protected void readData(Client client, DataInputStream dis) throws IOException {
-		packetID = dis.readShort();
+		packetID = dis.readShort() & 0xFFFF;
 	}
 }
