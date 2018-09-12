@@ -13,10 +13,11 @@ import pw.lemmmy.ts3protocol.crypto.Crypto;
 public class CommandClientInit extends Command {
 	private String
 		nickname, phoneticNickname,
-		defaultChannel, defaultChannelPassword,
+		defaultChannelPassword,
 		serverPassword, defaultToken,
 		hardwareID;
 	
+	private short defaultChannelID;
 	private Version version;
 	private long keyOffset;
 	
@@ -35,7 +36,7 @@ public class CommandClientInit extends Command {
 		arguments.put("client_platform", version.getPlatform());
 		arguments.put("client_input_hardware", "1");
 		arguments.put("client_output_hardware", "1");
-		arguments.put("client_default_channel", defaultChannel);
+		arguments.put("client_default_channel", defaultChannelID == -1 ? "" : Short.toString(defaultChannelID));
 		arguments.put("client_default_channel_password", Crypto.hashTeamspeakPassword(defaultChannelPassword));
 		arguments.put("client_server_password", Crypto.hashTeamspeakPassword(serverPassword));
 		arguments.put("client_meta_data", "");

@@ -19,6 +19,8 @@ public class Identity {
 	@Setter private String nickname = "TeamSpeakUser";
 	@Setter private String phoneticNickname = nickname;
 	
+	@Setter private short defaultChannelID = -1;
+	
 	private KeyPair keyPair;
 	private byte securityLevel;
 	private long keyOffset = -1;
