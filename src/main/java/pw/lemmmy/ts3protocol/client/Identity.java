@@ -6,10 +6,13 @@ import lombok.experimental.Accessors;
 import pw.lemmmy.ts3protocol.crypto.EC;
 import pw.lemmmy.ts3protocol.crypto.HashCash;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 
 @Getter
 @Accessors(chain = true)
@@ -34,12 +37,47 @@ public class Identity {
 		generateKeyPair();
 	}
 	
+	public Identity(File publicKeyFile, File privateKeyFile) {
+		this(DEFAULT_LEVEL, publicKeyFile, privateKeyFile);
+	}
+	
+	public Identity(byte securityLevel, File publicKeyFile, File privateKeyFile) {
+		this.securityLevel = securityLevel;
+		
+		if (!publicKeyFile.exists() || !privateKeyFile.exists()) {
+			generateKeyPair();
+			writeKeyPair(publicKeyFile, privateKeyFile);
+		} else {
+			readKeyPair(publicKeyFile, privateKeyFile);
+		}
+	}
+	
 	private void generateKeyPair() {
 		try {
-			// TODO: persist the keypair for a consistent identity
 			keyPair = EC.generateECDHKeypair();
 			keyOffset = HashCash.hashCash(keyPair, securityLevel);
 		} catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void writeKeyPair(File publicKey, File privateKey) {
+		try {
+			Files.write(publicKey.toPath(), new X509EncodedKeySpec(keyPair.getPublic().getEncoded()).getEncoded());
+			Files.write(privateKey.toPath(), new X509EncodedKeySpec(keyPair.getPrivate().getEncoded()).getEncoded());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void readKeyPair(File publicKey, File privateKey) {
+		try {
+			keyPair = EC.decodeECDHKeypair(
+				Files.readAllBytes(publicKey.toPath()),
+				Files.readAllBytes(privateKey.toPath())
+			);
+			keyOffset = HashCash.hashCash(keyPair, securityLevel);
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
 			e.printStackTrace();
 		}
 	}

@@ -7,6 +7,8 @@ import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 
 public class EC {
 	public static final EdDSANamedCurveSpec CURVE25519_SPEC = EdDSANamedCurveTable.ED_25519_CURVE_SPEC;
@@ -17,6 +19,14 @@ public class EC {
 		KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDH", Crypto.PROVIDER);
 		generator.initialize(Crypto.PRIME256_V1, new SecureRandom());
 		return generator.generateKeyPair();
+	}
+	
+	public static KeyPair decodeECDHKeypair(byte[] publicBytes, byte[] privateBytes) throws NoSuchAlgorithmException,
+																							InvalidKeySpecException {
+		KeyFactory factory = KeyFactory.getInstance("ECDH", Crypto.PROVIDER);
+		PublicKey publicKey = factory.generatePublic(new X509EncodedKeySpec(publicBytes));
+		PrivateKey privateKey = factory.generatePrivate(new X509EncodedKeySpec(privateBytes));
+		return new KeyPair(publicKey, privateKey);
 	}
 	
 	public static boolean verifyECDSA(ECPublicKey key, byte[] message, byte[] proof) throws NoSuchAlgorithmException,
