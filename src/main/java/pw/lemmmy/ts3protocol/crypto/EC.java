@@ -8,6 +8,7 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 public class EC {
@@ -25,7 +26,7 @@ public class EC {
 																							InvalidKeySpecException {
 		KeyFactory factory = KeyFactory.getInstance("ECDH", Crypto.PROVIDER);
 		PublicKey publicKey = factory.generatePublic(new X509EncodedKeySpec(publicBytes));
-		PrivateKey privateKey = factory.generatePrivate(new X509EncodedKeySpec(privateBytes));
+		PrivateKey privateKey = factory.generatePrivate(new PKCS8EncodedKeySpec(privateBytes));
 		return new KeyPair(publicKey, privateKey);
 	}
 	

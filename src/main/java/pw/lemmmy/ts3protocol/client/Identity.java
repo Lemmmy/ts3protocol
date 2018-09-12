@@ -12,6 +12,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 @Getter
@@ -64,7 +65,7 @@ public class Identity {
 	public void writeKeyPair(File publicKey, File privateKey) {
 		try {
 			Files.write(publicKey.toPath(), new X509EncodedKeySpec(keyPair.getPublic().getEncoded()).getEncoded());
-			Files.write(privateKey.toPath(), new X509EncodedKeySpec(keyPair.getPrivate().getEncoded()).getEncoded());
+			Files.write(privateKey.toPath(), new PKCS8EncodedKeySpec(keyPair.getPrivate().getEncoded()).getEncoded());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
