@@ -1,11 +1,13 @@
 package pw.lemmmy.ts3protocol.voice.codecs;
 
 import org.xiph.speex.SpeexDecoder;
+import org.xiph.speex.SpeexEncoder;
 
 import java.io.StreamCorruptedException;
 
 public class SpeexCodec extends VoiceCodec {
 	private SpeexDecoder decoder;
+	private SpeexEncoder encoder;
 	
 	private int mode;
 	
@@ -19,6 +21,9 @@ public class SpeexCodec extends VoiceCodec {
 	public void init() {
 		decoder = new SpeexDecoder();
 		decoder.init(mode, sampleRate, channels, false);
+		
+		encoder = new SpeexEncoder();
+		encoder.init(mode, 10, sampleRate, channels); // TODO: variable quality
 	}
 	
 	@Override
@@ -37,6 +42,9 @@ public class SpeexCodec extends VoiceCodec {
 	
 	@Override
 	public byte[] encode(byte[] data) {
-		return new byte[0];
+		encoder.processData(data, 0, data.length);
+		byte[] out = new byte[encoder.getProcessedDataByteSize()];
+		encoder.getProcessedData(out, 0);
+		return out;
 	}
 }
