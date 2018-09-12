@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
 
-public class Main {
+public class Test {
 	public static void main(String[] args) {
 		try (FileInputStream fis = new FileInputStream("test.properties")) {
 			Properties properties = new Properties();

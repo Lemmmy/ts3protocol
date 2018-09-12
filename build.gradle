@@ -17,7 +17,7 @@ version "1.0-SNAPSHOT"
 
 sourceCompatibility = 1.8
 
-mainClassName = "pw.lemmmy.ts3protocol.Main"
+mainClassName = "pw.lemmmy.ts3protocol.Test"
 
 repositories {
     mavenCentral()
