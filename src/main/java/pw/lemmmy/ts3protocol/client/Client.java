@@ -74,8 +74,6 @@ public class Client extends User {
 		
 		// TODO: check multiple things (servergroups, users, channels)
 		commandHandler.addCommandListener(CommandChannelListFinished.class, c -> clientReady());
-		
-		Runtime.getRuntime().addShutdownHook(new Thread(this::disconnect));
 	}
 	
 	public void run() {

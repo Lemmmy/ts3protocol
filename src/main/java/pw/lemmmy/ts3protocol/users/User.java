@@ -81,11 +81,9 @@ public class User {
 	public class MyTeamspeakID extends StringProperty {{ name = "client_myteamspeak_id"; }}
 	
 	/*
-	  TODO: this is not necessarily the user's channel ID, just the target channel of a command.
-			it may be worth making this only effective for the notifycliententerview and
-			notifyclientmoved commands
+	  TODO: this is the wrong property but its the only one that satisfies the needs for now
 	*/
-	public class ChannelID extends ShortProperty {{ name = "ctid"; }}
+	public class ChannelID extends ShortProperty {{ name = "client_channel_group_inherited_channel_id"; }}
 	
 	public class Description extends StringProperty {{ name = "client_description"; }}
 	public class Country extends StringProperty {{ name = "client_country"; }}
