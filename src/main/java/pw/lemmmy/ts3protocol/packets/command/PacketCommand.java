@@ -27,7 +27,7 @@ public class PacketCommand extends Packet {
 	
 	@Override
 	protected void writeData(Client client, DataOutputStream os) throws IOException {
-		System.out.println("C→S: " + command.encode());
+		// System.out.println("C→S: " + command.encode());
 		
 		os.write(command.encode().getBytes());
 	}
@@ -36,7 +36,7 @@ public class PacketCommand extends Packet {
 	protected void readData(Client client, DataInputStream dis) {
 		String data = new String(this.data, StandardCharsets.UTF_8);
 		
-		System.out.println("S→C: " + data);
+		// System.out.println("S→C: " + data);
 		
 		String[] args = data.split(" ");
 		String commandName = args[0];
@@ -44,7 +44,7 @@ public class PacketCommand extends Packet {
 		command = CommandRegistry.getCommand(commandName).orElse(null);
 		
 		if (command == null) {
-			System.err.println("Don't know how to handle command " + commandName);
+			// System.err.println("Don't know how to handle command " + commandName);
 		} else {
 			command.decode(data.replaceFirst(commandName + " ", ""));
 			client.commandHandler.handleCommand(command);
