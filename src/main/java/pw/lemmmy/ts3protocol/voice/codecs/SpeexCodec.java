@@ -47,4 +47,7 @@ public class SpeexCodec extends VoiceCodec {
 		encoder.getProcessedData(out, 0);
 		return out;
 	}
+	
+	@Override
+	public void dispose() {}
 }

@@ -61,6 +61,13 @@ public class VoiceHandler {
 		}
 	}
 	
+	public void dispose() {
+		for (CodecType codecType : CodecType.values()) {
+			VoiceCodec codec = codecType.getCodec();
+			if (codec != null) codec.dispose();
+		}
+	}
+	
 	@FunctionalInterface
 	public interface VoiceListener {
 		void handle(User user, byte[] decodedData, PacketVoice voice);

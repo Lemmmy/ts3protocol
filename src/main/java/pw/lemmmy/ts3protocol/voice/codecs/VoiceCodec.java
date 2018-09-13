@@ -23,4 +23,6 @@ public abstract class VoiceCodec {
 	 * @return The encoded voice data.
 	 */
 	public abstract byte[] encode(byte[] data);
+	
+	public abstract void dispose();
 }

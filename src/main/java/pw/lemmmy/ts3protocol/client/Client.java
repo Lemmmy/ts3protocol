@@ -1,7 +1,9 @@
 package pw.lemmmy.ts3protocol.client;
 
 import lombok.Getter;
+import lombok.Setter;
 import pw.lemmmy.ts3protocol.commands.CommandHandler;
+import pw.lemmmy.ts3protocol.commands.CommandClientDisconnect;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelListFinished;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelSubscribeAll;
 import pw.lemmmy.ts3protocol.server.Server;
@@ -41,6 +43,8 @@ public class Client extends User {
 	private Set<ClientConnectedHandler> clientConnectedHandlers = new HashSet<>();
 	private Set<ClientReadyHandler> clientReadyHandlers = new HashSet<>();
 	
+	@Setter private String disconnectMessage;
+	
 	public Client(Identity identity, InetAddress host) throws SocketException {
 		this(identity, host, DEFAULT_PORT);
 	}
@@ -70,6 +74,8 @@ public class Client extends User {
 		
 		// TODO: check multiple things (servergroups, users, channels)
 		commandHandler.addCommandListener(CommandChannelListFinished.class, c -> clientReady());
+		
+		Runtime.getRuntime().addShutdownHook(new Thread(this::disconnect));
 	}
 	
 	public void run() {
@@ -119,6 +125,32 @@ public class Client extends User {
 		clientReady = true;
 		clientReadyHandlers.forEach(h -> h.handle(this));
 		clientReadyHandlers.clear();
+	}
+	
+	public void disconnect() {
+		if (commandHandler != null) {
+			try {
+				commandHandler.send(new CommandClientDisconnect(disconnectMessage));
+			} catch (Exception ignored) {}
+		}
+		
+		if (voiceHandler != null) {
+			try {
+				voiceHandler.dispose();
+			} catch (Exception e) {
+				System.err.println("Exception while trying to dispose voice handler:");
+				e.printStackTrace();
+			}
+		}
+		
+		if (socket != null) {
+			try {
+				socket.disconnect();
+			} catch (Exception e) {
+				System.err.println("Exception while trying to disconnect:");
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	@FunctionalInterface

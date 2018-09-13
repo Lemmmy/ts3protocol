@@ -80,4 +80,10 @@ public class OpusCodec extends VoiceCodec {
 		outputByteBuffer.get(out);
 		return out;
 	}
+	
+	@Override
+	public void dispose() {
+		if (decoder != null) opus.opus_decoder_destroy(decoder);
+		if (encoder != null) opus.opus_encoder_destroy(encoder);
+	}
 }
