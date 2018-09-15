@@ -15,7 +15,7 @@ public abstract class VoiceCodec {
 	 * @param data The raw data from the voice packet.
 	 * @return The decoded voice data, as signed 16-bit PCM, stereo.
 	 */
-	public abstract byte[] decode(byte[] data);
+	public abstract byte[] decode(short clientID, byte[] data);
 	
 	/**
 	 * Encodes a voice packet.

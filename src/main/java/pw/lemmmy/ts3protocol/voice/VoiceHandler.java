@@ -37,7 +37,7 @@ public class VoiceHandler {
 			short talkingClient = voice.getTalkingClient();
 			short voicePacketID = voice.getVoicePacketID();
 			
-			int packetsLost = Math.min(lastPacketIDs.containsKey(talkingClient) ? voicePacketID - lastPacketIDs.get(talkingClient) - 1 : 0, 5);
+			int packetsLost = Math.min(lastPacketIDs.containsKey(talkingClient) ? voicePacketID - lastPacketIDs.get(talkingClient) - 1 : 0, 3);
 			lastPacketIDs.put(talkingClient, voicePacketID);
 			
 			CodecType codecType = voice.getCodecType();
@@ -50,14 +50,14 @@ public class VoiceHandler {
 			User user = client.getServer().getUser(talkingClient);
 			
 			for (int i = 0; i < packetsLost; i++) {
-				byte[] out = codec.decode(null);
+				byte[] out = codec.decode(talkingClient, null);
 				if (out != null) {
 					if (codec.getChannels() == 1) out = VoiceUtils.monoToStereo(out);
 					handleVoiceListeners(user, out, voice);
 				}
 			}
 			
-			byte[] out = codec.decode(voiceData);
+			byte[] out = codec.decode(talkingClient, voiceData);
 			if (out != null) {
 				if (codec.getChannels() == 1) out = VoiceUtils.monoToStereo(out);
 				handleVoiceListeners(user, out, voice);

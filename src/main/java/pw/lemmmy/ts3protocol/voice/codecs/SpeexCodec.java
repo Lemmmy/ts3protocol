@@ -27,7 +27,7 @@ public class SpeexCodec extends VoiceCodec {
 	}
 	
 	@Override
-	public byte[] decode(byte[] data) {
+	public byte[] decode(short clientID, byte[] data) {
 		try {
 			if (data == null) {
 				decoder.processData(true);

@@ -8,12 +8,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 public class OpusCodec extends VoiceCodec {
 	private static final int SEGMENT_FRAMES = 960;
 	
 	private Opus opus;
-	private PointerByReference encoder, decoder;
+	private PointerByReference encoder;
+	private Map<Short, PointerByReference> decoders = new HashMap<>();
 	private int mode;
 	
 	public OpusCodec(int sampleRate, int channels, int mode) {
@@ -33,27 +36,31 @@ public class OpusCodec extends VoiceCodec {
 		opus = Opus.INSTANCE;
 		
 		IntBuffer error = IntBuffer.allocate(1);
-		
-		decoder = opus.opus_decoder_create(sampleRate, channels, error);
-		if (error.get() < 0) {
-			throw new RuntimeException("Failed to create opus decoder: " + opus.opus_strerror(error.get()));
-		}
-		error.rewind();
-		
 		encoder = opus.opus_encoder_create(sampleRate, channels, mode, error);
 		if (error.get() < 0) {
 			throw new RuntimeException("Failed to create opus encoder: " + opus.opus_strerror(error.get()));
 		}
-		error.rewind();
+	}
+	
+	private PointerByReference getOrCreateDecoder(short clientID) {
+		if (decoders.containsKey(clientID)) return decoders.get(clientID);
+		
+		IntBuffer error = IntBuffer.allocate(1);
+		PointerByReference decoder = opus.opus_decoder_create(sampleRate, channels, error);
+		if (error.get() < 0) {
+			throw new RuntimeException("Failed to create opus decoder: " + opus.opus_strerror(error.get()));
+		}
+		decoders.put(clientID, decoder);
+		return decoder;
 	}
 	
 	@Override
-	public byte[] decode(byte[] data) {
+	public byte[] decode(short clientID, byte[] data) {
 		ByteBuffer outputByteBuffer = ByteBuffer.allocateDirect(SEGMENT_FRAMES * Short.BYTES * channels);
 		ShortBuffer outputBuffer = outputByteBuffer.asShortBuffer();
 		
 		int length = opus.opus_decode(
-			decoder,
+			getOrCreateDecoder(clientID),
 			data, data != null ? data.length : 0,
 			outputBuffer, SEGMENT_FRAMES, 0
 		);
@@ -81,7 +88,7 @@ public class OpusCodec extends VoiceCodec {
 	
 	@Override
 	public void dispose() {
-		if (decoder != null) opus.opus_decoder_destroy(decoder);
+		decoders.values().forEach(opus::opus_decoder_destroy);
 		if (encoder != null) opus.opus_encoder_destroy(encoder);
 	}
 }
