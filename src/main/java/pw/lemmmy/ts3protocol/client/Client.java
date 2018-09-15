@@ -143,7 +143,7 @@ public class Client extends User {
 		
 		if (socket != null) {
 			try {
-				socket.disconnect();
+				socket.close();
 			} catch (Exception e) {
 				System.err.println("Exception while trying to disconnect:");
 				e.printStackTrace();
