@@ -10,7 +10,6 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
 public class OpusCodec extends VoiceCodec {
-	private static final int OPUS_FRAME_SIZE = 4096;
 	private static final int SEGMENT_FRAMES = 960;
 	
 	private Opus opus;
@@ -50,18 +49,17 @@ public class OpusCodec extends VoiceCodec {
 	
 	@Override
 	public byte[] decode(byte[] data) {
-		int outputLength = OPUS_FRAME_SIZE * channels;
-		ByteBuffer outputByteBuffer = ByteBuffer.allocateDirect(outputLength * Short.SIZE);
+		ByteBuffer outputByteBuffer = ByteBuffer.allocateDirect(SEGMENT_FRAMES * Short.BYTES * channels);
 		ShortBuffer outputBuffer = outputByteBuffer.asShortBuffer();
 		
 		int length = opus.opus_decode(
 			decoder,
-			data, data.length,
-			outputBuffer, OPUS_FRAME_SIZE, 0
+			data, data != null ? data.length : 0,
+			outputBuffer, SEGMENT_FRAMES, 0
 		);
 		if (length < 0) return null;
 		
-		byte[] out = new byte[length * 2 * channels];
+		byte[] out = new byte[length * Short.BYTES * channels];
 		outputByteBuffer.get(out);
 		return out;
 	}
@@ -70,7 +68,7 @@ public class OpusCodec extends VoiceCodec {
 	public byte[] encode(byte[] data) {
 		ShortBuffer inputBuffer = ByteBuffer.wrap(data).asShortBuffer();
 		
-		int outputLength = OPUS_FRAME_SIZE * channels;
+		int outputLength = SEGMENT_FRAMES * Short.BYTES * channels;
 		ByteBuffer outputByteBuffer = ByteBuffer.allocateDirect(outputLength);
 		
 		int encodedLength = opus.opus_encode(encoder, inputBuffer, data.length / channels, outputByteBuffer, SEGMENT_FRAMES * channels);
