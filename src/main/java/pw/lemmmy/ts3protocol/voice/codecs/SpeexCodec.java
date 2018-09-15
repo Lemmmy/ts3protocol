@@ -29,7 +29,12 @@ public class SpeexCodec extends VoiceCodec {
 	@Override
 	public byte[] decode(byte[] data) {
 		try {
-			decoder.processData(data, 0, data.length);
+			if (data == null) {
+				decoder.processData(true);
+			} else {
+				decoder.processData(data, 0, data.length);
+			}
+			
 			byte[] out = new byte[decoder.getProcessedDataByteSize()];
 			decoder.getProcessedData(out, 0);
 			return out;
