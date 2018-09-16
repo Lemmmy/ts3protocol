@@ -6,6 +6,7 @@ import pw.lemmmy.ts3protocol.commands.CommandHandler;
 import pw.lemmmy.ts3protocol.commands.CommandClientDisconnect;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelListFinished;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelSubscribeAll;
+import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientLeftView;
 import pw.lemmmy.ts3protocol.server.Server;
 import pw.lemmmy.ts3protocol.users.User;
 import pw.lemmmy.ts3protocol.voice.VoiceHandler;
@@ -74,6 +75,14 @@ public class Client extends User {
 		
 		// TODO: check multiple things (servergroups, users, channels)
 		commandHandler.addCommandListener(CommandChannelListFinished.class, c -> clientReady());
+		commandHandler.addCommandListener(CommandNotifyClientLeftView.class, c -> c.getArgumentSets().forEach(args -> {
+			if (!args.containsKey("clid")) return;
+			
+			if (Short.parseShort(args.get("clid")) == getID()) {
+				System.err.println("Disconnected from the server.");
+				disconnect();
+			}
+		}));
 	}
 	
 	public void run() {
