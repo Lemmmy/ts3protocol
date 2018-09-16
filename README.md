@@ -30,7 +30,7 @@ The project is based on the work of the [ReSpeak](https://github.com/ReSpeak) te
 ## Known issues
 
 * Sometimes, the low-level handshake fails. The official client deals with this by just attempting reconnection.
-* There is no packet re-ordering, so packets can get decrypted incorrectly (rare occurance).
+* There is no packet re-ordering, so packets can get decrypted incorrectly (rare occurrence).
 * On occasion, there may be QuickLZ decompression errors. This could be packets decrypting incorrectly, too.
 
 ## Building and running the test client
