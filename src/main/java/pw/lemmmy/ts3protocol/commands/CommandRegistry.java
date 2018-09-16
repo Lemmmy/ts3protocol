@@ -24,6 +24,7 @@ public class CommandRegistry {
 		commands.put("initserver", CommandInitServer::new);
 		
 		// clients
+		commands.put("clientmove", CommandClientMove::new);
 		commands.put("clientupdate", CommandClientUpdate::new);
 		commands.put("notifycliententerview", CommandNotifyClientEnterView::new);
 		commands.put("notifyclientleftview", CommandNotifyClientLeftView::new);
