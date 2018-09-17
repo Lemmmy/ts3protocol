@@ -19,10 +19,16 @@ public class OpusCodec extends VoiceCodec {
 	private Map<Short, PointerByReference> decoders = new HashMap<>();
 	private int mode;
 	
+	private ByteBuffer outputByteBuffer;
+	private ShortBuffer outputBuffer;
+	
 	public OpusCodec(int sampleRate, int channels, int mode) {
 		super(sampleRate, channels);
 		
 		this.mode = mode;
+		
+		outputByteBuffer = ByteBuffer.allocateDirect(SEGMENT_FRAMES * Short.BYTES * channels);
+		outputBuffer = outputByteBuffer.asShortBuffer();
 	}
 	
 	@Override
@@ -56,8 +62,7 @@ public class OpusCodec extends VoiceCodec {
 	
 	@Override
 	public byte[] decode(short clientID, byte[] data) {
-		ByteBuffer outputByteBuffer = ByteBuffer.allocateDirect(SEGMENT_FRAMES * Short.BYTES * channels);
-		ShortBuffer outputBuffer = outputByteBuffer.asShortBuffer();
+		outputByteBuffer.rewind();
 		
 		int length = opus.opus_decode(
 			getOrCreateDecoder(clientID),
