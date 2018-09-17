@@ -26,9 +26,6 @@ public class OpusCodec extends VoiceCodec {
 		super(sampleRate, channels);
 		
 		this.mode = mode;
-		
-		outputByteBuffer = ByteBuffer.allocateDirect(SEGMENT_FRAMES * Short.BYTES * channels);
-		outputBuffer = outputByteBuffer.asShortBuffer();
 	}
 	
 	@Override
@@ -46,6 +43,9 @@ public class OpusCodec extends VoiceCodec {
 		if (error.get() < 0) {
 			throw new RuntimeException("Failed to create opus encoder: " + opus.opus_strerror(error.get()));
 		}
+		
+		outputByteBuffer = ByteBuffer.allocateDirect(SEGMENT_FRAMES * Short.BYTES * channels);
+		outputBuffer = outputByteBuffer.asShortBuffer();
 	}
 	
 	private PointerByReference getOrCreateDecoder(short clientID) {
