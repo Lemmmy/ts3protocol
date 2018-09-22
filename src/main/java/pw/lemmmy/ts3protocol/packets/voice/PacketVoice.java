@@ -8,6 +8,7 @@ import pw.lemmmy.ts3protocol.packets.PacketType;
 import pw.lemmmy.ts3protocol.voice.codecs.CodecType;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 @Getter
@@ -34,5 +35,12 @@ public class PacketVoice extends Packet {
 		dis.read(voiceData);
 		
 		client.voiceHandler.handleAudioPacket(this);
+	}
+	
+	@Override
+	protected void writeData(Client client, DataOutputStream os) throws IOException {
+		os.writeShort(voicePacketID);
+		os.writeByte(codecType.ordinal());
+		os.write(voiceData);
 	}
 }
