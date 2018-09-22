@@ -18,9 +18,9 @@ public class PacketVoice extends Packet {
 		unencrypted = false; // TODO
 	}
 	
-	private short voicePacketID, talkingClient;
-	private CodecType codecType;
-	private byte[] voiceData;
+	public short voicePacketID, talkingClient;
+	public CodecType codecType;
+	public byte[] voiceData;
 	
 	public PacketVoice() {}
 	
