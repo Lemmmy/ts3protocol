@@ -15,7 +15,7 @@ import java.io.IOException;
 public class PacketVoice extends Packet {
 	{
 		packetType = PacketType.VOICE;
-		unencrypted = false; // TODO
+		unencrypted = true; // TODO
 	}
 	
 	public short voicePacketID, talkingClient;
