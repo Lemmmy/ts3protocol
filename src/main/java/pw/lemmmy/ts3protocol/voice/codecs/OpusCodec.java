@@ -44,6 +44,8 @@ public class OpusCodec extends VoiceCodec {
 			throw new RuntimeException("Failed to create opus encoder: " + opus.opus_strerror(error.get()));
 		}
 		
+		opus.opus_encoder_ctl(encoder, Opus.OPUS_SET_BITRATE_REQUEST, 8192 * Short.BYTES * channels);
+		
 		outputByteBuffer = ByteBuffer.allocateDirect(SEGMENT_FRAMES * Short.BYTES * channels);
 		outputBuffer = outputByteBuffer.asShortBuffer();
 	}
@@ -78,12 +80,13 @@ public class OpusCodec extends VoiceCodec {
 	
 	@Override
 	public byte[] encode(byte[] data) {
-		ShortBuffer inputBuffer = ByteBuffer.wrap(data).asShortBuffer();
+		ByteBuffer inputBuffer = ByteBuffer.allocateDirect(data.length);
+		inputBuffer.put(data);
 		
 		int outputLength = SEGMENT_FRAMES * Short.BYTES * channels;
 		ByteBuffer outputByteBuffer = ByteBuffer.allocateDirect(outputLength);
 		
-		int encodedLength = opus.opus_encode(encoder, inputBuffer, data.length / channels, outputByteBuffer, SEGMENT_FRAMES * channels);
+		int encodedLength = opus.opus_encode(encoder, inputBuffer.asShortBuffer(), SEGMENT_FRAMES, outputByteBuffer, outputLength);
 		if (encodedLength < 0) return null;
 		
 		byte[] out = new byte[encodedLength];
