@@ -80,8 +80,8 @@ public class OpusCodec extends VoiceCodec {
 	
 	@Override
 	public byte[] encode(byte[] data) {
-		ByteBuffer inputBuffer = ByteBuffer.allocateDirect(data.length);
-		inputBuffer.put(data);
+		ByteBuffer inputBuffer = ByteBuffer.allocateDirect(data.length).put(data);
+		inputBuffer.flip();
 		
 		int outputLength = SEGMENT_FRAMES * Short.BYTES * channels;
 		ByteBuffer outputByteBuffer = ByteBuffer.allocateDirect(outputLength);
