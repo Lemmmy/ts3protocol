@@ -2,6 +2,7 @@ package pw.lemmmy.ts3protocol.channels;
 
 import lombok.Getter;
 import pw.lemmmy.ts3protocol.client.Client;
+import pw.lemmmy.ts3protocol.commands.channels.CommandChannelEdit;
 import pw.lemmmy.ts3protocol.commands.channels.CommandNotifyChannelChanged;
 import pw.lemmmy.ts3protocol.commands.channels.CommandNotifyChannelEdited;
 import pw.lemmmy.ts3protocol.server.Server;
@@ -22,7 +23,7 @@ public class Channel {
 		this.server = server;
 		
 		props = new ChannelPropertyManager(
-			id, client, null,
+			id, client, CommandChannelEdit.class,
 			CommandNotifyChannelChanged.class, CommandNotifyChannelEdited.class
 		);
 		initialiseProperties();
