@@ -87,11 +87,15 @@ public class PropertyManager {
 					.collect(Collectors.toList())
 			);
 			
+			handleFlushCommand(command);
+			
 			client.packetHandler.send(new PacketCommand(command));
 		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
 			log.error("Error sending update command while flushing properties", e);
 		}
 	}
+	
+	protected void handleFlushCommand(Command command) {}
 	
 	protected boolean shouldReadCommand(Command command, Map<String, String> arguments) {
 		return true;
