@@ -106,7 +106,9 @@ public class PropertyManager {
 		
 		properties.values().forEach(p -> {
 			try {
+				boolean alreadyChanged = p.isChanged();
 				p.decodeProperty(p.fromRootSet ? command.getArguments(0) : arguments);
+				if (!alreadyChanged) p.setChanged(false);
 			} catch (Exception e) {
 				log.error("Error decoding property {} from command {}", p.getClass().getSimpleName(), command.getName(), e);
 			}
