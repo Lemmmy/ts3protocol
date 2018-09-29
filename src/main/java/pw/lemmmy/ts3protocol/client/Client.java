@@ -132,6 +132,10 @@ public class Client extends User {
 		clientReadyHandlers.clear();
 	}
 	
+	public void disconnect() {
+		disconnect(0);
+	}
+	
 	public void disconnect(int code) {
 		if (commandHandler != null) {
 			try {
