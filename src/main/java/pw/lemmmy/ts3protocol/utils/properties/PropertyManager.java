@@ -106,7 +106,7 @@ public class PropertyManager {
 		
 		properties.values().forEach(p -> {
 			try {
-				p.decodeProperty(arguments);
+				p.decodeProperty(p.fromRootSet ? command.getArguments(0) : arguments);
 			} catch (Exception e) {
 				log.error("Error decoding property {} from command {}", p.getClass().getSimpleName(), command.getName(), e);
 			}

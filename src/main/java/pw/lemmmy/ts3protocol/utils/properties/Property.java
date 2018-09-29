@@ -12,6 +12,8 @@ public abstract class Property<T> {
 	private T value;
 	@Setter private boolean changed;
 	
+	protected boolean fromRootSet;
+	
 	@Setter private PropertyManager manager;
 	
 	public Property<T> setValue(T value) {

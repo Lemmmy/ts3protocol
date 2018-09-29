@@ -81,10 +81,7 @@ public class User {
 	public class DatabaseID extends IntProperty {{ name = "client_database_id"; }}
 	public class MyTeamspeakID extends StringProperty {{ name = "client_myteamspeak_id"; }}
 	
-	/*
-	  TODO: this is the wrong property but its the only one that satisfies the needs for now
-	*/
-	public class ChannelID extends ShortProperty {{ name = "ctid"; }}
+	public class ChannelID extends ShortProperty {{ name = "ctid"; fromRootSet = true; }}
 	
 	public class Description extends StringProperty {{ name = "client_description"; }}
 	public class Country extends StringProperty {{ name = "client_country"; }}
