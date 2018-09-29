@@ -1,6 +1,7 @@
 package pw.lemmmy.ts3protocol.packets.command;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.commands.Command;
 import pw.lemmmy.ts3protocol.commands.CommandRegistry;
@@ -12,7 +13,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+import static org.fusesource.jansi.Ansi.ansi;
+
 @AllArgsConstructor
+@Slf4j
 public class PacketCommand extends Packet {
 	private Command command;
 	
@@ -27,16 +31,16 @@ public class PacketCommand extends Packet {
 	
 	@Override
 	protected void writeData(Client client, DataOutputStream os) throws IOException {
-		// System.out.println("C→S: " + command.encode());
-		
-		os.write(command.encode().getBytes());
+		String encoded = command.encode();
+		log.trace(ansi().render("@|green C→S|@: ") + encoded);
+		os.write(encoded.getBytes());
 	}
 	
 	@Override
 	protected void readData(Client client, DataInputStream dis) {
 		String data = new String(this.data, StandardCharsets.UTF_8);
 		
-		// System.out.println("S→C: " + data);
+		log.trace(ansi().render("@|cyan S→C|@: ") + data);
 		
 		String[] args = data.split(" ");
 		String commandName = args[0];
@@ -44,7 +48,7 @@ public class PacketCommand extends Packet {
 		command = CommandRegistry.getCommand(commandName).orElse(null);
 		
 		if (command == null) {
-			// System.err.println("Don't know how to handle command " + commandName);
+			log.debug(ansi().render("@|red Don't know how to handle command |@@|bold,red {}|@").toString(), commandName);
 		} else {
 			command.decode(data.replaceFirst(commandName + " ", ""));
 			client.commandHandler.handleCommand(command);

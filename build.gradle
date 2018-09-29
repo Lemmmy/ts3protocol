@@ -17,7 +17,7 @@ version "1.0-SNAPSHOT"
 
 sourceCompatibility = 1.8
 
-mainClassName = "pw.lemmmy.ts3protocol.Test"
+mainClassName = "pw.lemmmy.ts3protocol.test.Test"
 
 repositories {
     mavenCentral()
@@ -34,11 +34,18 @@ lombok {
 }
 
 dependencies {
-    compile "commons-lang:commons-lang:2.6"
-    compile "org.bouncycastle:bcprov-jdk15on:1.60"
-    compile "net.i2p.crypto:eddsa:0.3.0"
-    compile "club.minnced:opus-java:1.0.4"
-    compile "club.minnced:opus-java-natives:1.0.4"
-    compile "club.minnced:opus-java-api:1.0.4"
-    compile "org.mobicents.external.jspeex:jspeex:0.9.7"
+	implementation "commons-lang:commons-lang:2.6"
+
+	implementation "org.bouncycastle:bcprov-jdk15on:1.60"
+	implementation "net.i2p.crypto:eddsa:0.3.0"
+
+	implementation "club.minnced:opus-java:1.0.4"
+	implementation "club.minnced:opus-java-natives:1.0.4"
+	implementation "club.minnced:opus-java-api:1.0.4"
+	implementation "org.mobicents.external.jspeex:jspeex:0.9.7"
+
+	implementation "org.slf4j:slf4j-api:1.7.25"
+	implementation "org.fusesource.jansi:jansi:1.17.1"
+	testImplementation "ch.qos.logback:logback-classic:1.2.3"
+	testImplementation "ch.qos.logback:logback-core:1.2.3"
 }

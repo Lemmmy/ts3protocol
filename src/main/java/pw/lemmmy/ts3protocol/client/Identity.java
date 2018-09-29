@@ -3,6 +3,7 @@ package pw.lemmmy.ts3protocol.client;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import pw.lemmmy.ts3protocol.crypto.EC;
 import pw.lemmmy.ts3protocol.crypto.HashCash;
 
@@ -16,6 +17,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 @Getter
+@Slf4j
 @Accessors(chain = true)
 public class Identity {
 	private static final byte DEFAULT_LEVEL = 8;
@@ -58,7 +60,7 @@ public class Identity {
 			keyPair = EC.generateECDHKeypair();
 			keyOffset = HashCash.hashCash(keyPair, securityLevel);
 		} catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | IOException e) {
-			e.printStackTrace();
+			log.error("Error generating identity keypair", e);
 		}
 	}
 	
@@ -67,7 +69,7 @@ public class Identity {
 			Files.write(publicKey.toPath(), new X509EncodedKeySpec(keyPair.getPublic().getEncoded()).getEncoded());
 			Files.write(privateKey.toPath(), new PKCS8EncodedKeySpec(keyPair.getPrivate().getEncoded()).getEncoded());
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Error writing identity keypair", e);
 		}
 	}
 	
@@ -79,7 +81,7 @@ public class Identity {
 			);
 			keyOffset = HashCash.hashCash(keyPair, securityLevel);
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-			e.printStackTrace();
+			log.error("Error reading identity keypair", e);
 		}
 	}
 }

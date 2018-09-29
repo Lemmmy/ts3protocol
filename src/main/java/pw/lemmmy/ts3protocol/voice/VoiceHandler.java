@@ -1,5 +1,6 @@
 package pw.lemmmy.ts3protocol.voice;
 
+import lombok.extern.slf4j.Slf4j;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.packets.voice.PacketVoice;
 import pw.lemmmy.ts3protocol.users.User;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 public class VoiceHandler {
 	private Client client;
 	
@@ -63,8 +65,7 @@ public class VoiceHandler {
 				handleVoiceListeners(user, out, voice);
 			}
 		} catch (Exception e) {
-			System.err.println("Error decoding voice packet:");
-			e.printStackTrace();
+			log.error("Error decoding voice packet", e);
 		}
 	}
 	
@@ -73,8 +74,7 @@ public class VoiceHandler {
 			try {
 				l.handle(user, out, voice);
 			} catch (Exception e) {
-				System.err.println("Error in voice listener:");
-				e.printStackTrace();
+				log.error("Error in voice listener", e);
 			}
 		});
 	}

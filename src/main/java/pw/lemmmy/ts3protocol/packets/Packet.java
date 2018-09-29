@@ -2,6 +2,7 @@ package pw.lemmmy.ts3protocol.packets;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import pw.lemmmy.ts3protocol.client.Client;
@@ -18,6 +19,7 @@ import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
 
 @Getter
 @Setter
+@Slf4j
 public class Packet {
 	protected PacketDirection direction;
 	protected byte[][] macs;
@@ -70,7 +72,7 @@ public class Packet {
 							bos.write(decrypted);
 						} catch (InvalidCipherTextException e) {
 							if (packetType != PacketType.ACK) { // normal for the first ACK
-								System.err.println("Failed to decrypt data with calculated key, trying shared key");
+								log.error("Failed to decrypt data with calculated key, trying shared key");
 							}
 							
 							try {
@@ -84,12 +86,11 @@ public class Packet {
 								
 								bos.write(decrypted);
 							} catch (InvalidCipherTextException e1) {
-								System.err.println("Can't decrypt data (mac check failed) with calculated and shared keys");
-								e1.printStackTrace();
+								log.error("Can't decrypt data (mac check failed) with calculated and shared keys", e);
 							}
 						}
 					} catch (IOException e) {
-						e.printStackTrace();
+						log.error("Error reading high-level packet", e);
 					}
 				}
 			}
@@ -105,7 +106,7 @@ public class Packet {
 		) {
 			readData(client, dis);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Error reading data from high-level packet", e);
 		}
 	}
 	
@@ -123,7 +124,7 @@ public class Packet {
 			dos.flush();
 			data = bos.toByteArray();
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Error writing data to high-level packet", e);
 		}
 		
 		byte[] compressedData = compressed && packetType.isCompressible() ? QuickLZ.compress(data, 1) : data;
@@ -186,7 +187,7 @@ public class Packet {
 					packet.mac = encrypted[0];
 					packet.data = encrypted[1];
 				} catch (IOException | InvalidCipherTextException e) {
-					e.printStackTrace();
+					log.error("Error writing high-level packet", e);
 				}
 			}
 			
@@ -224,7 +225,7 @@ public class Packet {
 				
 				keyCache.put(packetType, new CachedKey(generationID, key, nonce));
 			} catch (IOException e) {
-				e.printStackTrace();
+				log.error("Error creating EAX key-nonce pair for packet {} (id: {} gen: {})", packetType.name(), packetID, generationID, e);
 			}
 		}
 		

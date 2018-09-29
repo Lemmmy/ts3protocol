@@ -1,9 +1,12 @@
 package pw.lemmmy.ts3protocol.utils.properties;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 
+@Slf4j
 public abstract class InetAddressProperty extends Property<InetAddress> {
 	protected String name;
 	
@@ -20,8 +23,7 @@ public abstract class InetAddressProperty extends Property<InetAddress> {
 		try {
 			setValue(InetAddress.getByName(arguments.get(name)));
 		} catch (UnknownHostException e) {
-			System.err.println("Error parsing InetAddress from " + name + " property");
-			e.printStackTrace();
+			log.error("Error parsing InetAddress from {} property", name, e);
 		}
 	}
 }

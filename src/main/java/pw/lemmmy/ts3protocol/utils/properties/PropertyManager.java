@@ -1,6 +1,7 @@
 package pw.lemmmy.ts3protocol.utils.properties;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.reflect.ConstructorUtils;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.commands.Command;
@@ -13,6 +14,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
+@Slf4j
 @SuppressWarnings("unchecked")
 public class PropertyManager {
 	private Map<Class<? extends Property>, Property<?>> properties = new HashMap<>();
@@ -66,7 +68,7 @@ public class PropertyManager {
 				propertyInstance.setManager(this);
 				properties.put(property, propertyInstance);
 			} catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-				e.printStackTrace();
+				log.error("Error setting property {}", property.getSimpleName(), e);
 			}
 		}
 		
@@ -87,7 +89,7 @@ public class PropertyManager {
 			
 			client.packetHandler.send(new PacketCommand(command));
 		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-			e.printStackTrace();
+			log.error("Error sending update command while flushing properties", e);
 		}
 	}
 	
@@ -105,9 +107,8 @@ public class PropertyManager {
 		properties.values().forEach(p -> {
 			try {
 				p.decodeProperty(arguments);
-			} catch (Exception err) {
-				System.err.println("Error decoding property " + p.getClass().getSimpleName() + " from command " + command.getName());
-				err.printStackTrace();
+			} catch (Exception e) {
+				log.error("Error decoding property {} from command {}", p.getClass().getSimpleName(), command.getName(), e);
 			}
 		});
 	}

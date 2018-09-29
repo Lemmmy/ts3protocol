@@ -1,6 +1,7 @@
 package pw.lemmmy.ts3protocol.client;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import net.i2p.crypto.eddsa.math.GroupElement;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
@@ -24,6 +25,7 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 
 @Getter
+@Slf4j
 public class Handshake {
 	private static final String DEFAULT_HWID = "923f136fb1e22ae6ce95e60255529c00,d13231b1bc33edfecfb9169cc7a63bcc";
 	
@@ -108,7 +110,7 @@ public class Handshake {
 			licence = new Licence();
 			licence.parse(dis);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Error parsing licence", e);
 			return;
 		}
 		

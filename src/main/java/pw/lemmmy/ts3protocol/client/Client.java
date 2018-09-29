@@ -2,6 +2,7 @@ package pw.lemmmy.ts3protocol.client;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import pw.lemmmy.ts3protocol.commands.CommandHandler;
 import pw.lemmmy.ts3protocol.commands.CommandClientDisconnect;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelListFinished;
@@ -22,6 +23,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Getter
+@Slf4j
 public class Client extends User {
 	public static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
 	
@@ -79,8 +81,8 @@ public class Client extends User {
 			if (!args.containsKey("clid")) return;
 			
 			if (Short.parseShort(args.get("clid")) == getID()) {
-				System.err.println("Disconnected from the server.");
-				disconnect();
+				log.error("Disconnected from the server.");
+				disconnect(1);
 			}
 		}));
 	}
@@ -88,18 +90,14 @@ public class Client extends User {
 	public void run() {
 		EXECUTOR.schedule(() -> {
 			if (!clientReady) {
-				System.err.println("Client was not ready within " + CONNECT_TIMEOUT_SECONDS + " seconds. Please retry.");
+				log.error("Client was not ready within {} seconds. Please retry.", CONNECT_TIMEOUT_SECONDS);
 				System.exit(1);
 			}
 		}, CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 		
 		EXECUTOR.submit(() -> {
-			try {
-				handshake.beginLowLevelHandshake();
-				packetHandler.readLoop();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			handshake.beginLowLevelHandshake();
+			packetHandler.readLoop();
 		});
 	}
 	
@@ -134,7 +132,7 @@ public class Client extends User {
 		clientReadyHandlers.clear();
 	}
 	
-	public void disconnect() {
+	public void disconnect(int code) {
 		if (commandHandler != null) {
 			try {
 				commandHandler.send(new CommandClientDisconnect(disconnectMessage));
@@ -145,19 +143,19 @@ public class Client extends User {
 			try {
 				voiceHandler.dispose();
 			} catch (Exception e) {
-				System.err.println("Exception while trying to dispose voice handler:");
-				e.printStackTrace();
+				log.error("Exception while trying to dispose voice handler", e);
 			}
 		}
 		
-		if (socket != null) {
+		if (socket != null && !socket.isClosed()) {
 			try {
 				socket.close();
 			} catch (Exception e) {
-				System.err.println("Exception while trying to disconnect:");
-				e.printStackTrace();
+				log.error("Exception while trying to disconnect", e);
 			}
 		}
+		
+		System.exit(code);
 	}
 	
 	@FunctionalInterface

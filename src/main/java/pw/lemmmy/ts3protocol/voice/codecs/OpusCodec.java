@@ -2,6 +2,7 @@ package pw.lemmmy.ts3protocol.voice.codecs;
 
 import club.minnced.opus.util.OpusLibrary;
 import com.sun.jna.ptr.PointerByReference;
+import lombok.extern.slf4j.Slf4j;
 import tomp2p.opuswrapper.Opus;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.nio.ShortBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class OpusCodec extends VoiceCodec {
 	private static final int SEGMENT_FRAMES = 960;
 	
@@ -33,7 +35,7 @@ public class OpusCodec extends VoiceCodec {
 		try {
 			OpusLibrary.loadFromJar();
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Error loading opus library", e);
 		}
 		
 		opus = Opus.INSTANCE;

@@ -1,5 +1,6 @@
 package pw.lemmmy.ts3protocol.crypto;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
@@ -13,6 +14,7 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
+@Slf4j
 public class ASN {
 	public static DERSequence toDERASN1(KeyPair kp) {
 		ECPublicKey pubKey = (ECPublicKey) kp.getPublic();
@@ -33,7 +35,7 @@ public class ASN {
 		try {
 			factory = KeyFactory.getInstance("ECDH", Crypto.PROVIDER);
 		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
+			log.error("Provider doesn't provide ECDH algorithm", e);
 			return null;
 		}
 		

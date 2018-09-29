@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <variable name="TS3PROTOCOL_LOG_LEVEL" value="${TS3PROTOCOL_LOG_LEVEL:-DEBUG}" />
+    <logger name="pw.lemmmy.ts3protocol" level="${TS3PROTOCOL_LOG_LEVEL}"/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <withJansi>true</withJansi>
+        <encoder>
+            <pattern>%white(%d{HH:mm:ss.SSS}) %highlight([%-5level]) %white(%logger{16}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

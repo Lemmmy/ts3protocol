@@ -1,5 +1,6 @@
 package pw.lemmmy.ts3protocol.client;
 
+import lombok.extern.slf4j.Slf4j;
 import pw.lemmmy.ts3protocol.packets.LowLevelPacket;
 import pw.lemmmy.ts3protocol.packets.Packet;
 import pw.lemmmy.ts3protocol.packets.PacketType;
@@ -24,8 +25,10 @@ import java.util.concurrent.TimeUnit;
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
 
+@Slf4j
 public class PacketHandler {
 	private static final long PING_INTERVAL = 5;
+	private static final int SEND_ERROR_THRESHOLD = 5;
 	
 	private Client client;
 	private ConnectionParameters params;
@@ -34,6 +37,8 @@ public class PacketHandler {
 	protected boolean ivComplete;
 	
 	private ScheduledFuture<?> pingFuture;
+	
+	private int sendErrors = 0;
 	
 	public PacketHandler(Client client) {
 		this.client = client;
@@ -49,7 +54,7 @@ public class PacketHandler {
 		pingFuture.cancel(false);
 	}
 	
-	void readLoop() throws IOException {
+	void readLoop() {
 		List<LowLevelPacket> packets = new ArrayList<>(), fragmentedPackets = new ArrayList<>();
 		boolean fragmented = false;
 		
@@ -91,7 +96,7 @@ public class PacketHandler {
 					packets.clear();
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				log.error("Error reading packet", e);
 			}
 		}
 	}
@@ -105,12 +110,18 @@ public class PacketHandler {
 			hlPacket.setDirection(SERVER_TO_CLIENT);
 			hlPacket.read(client, packets.toArray(new LowLevelPacket[0]));
 		} else {
-			System.err.println("Don't know how to handle packet type " + type.name());
+			log.error("Don't know how to handle packet type {}", type.name());
 		}
 	}
 	
 	void receiveLowLevel(LowLevelPacket packet) {
 		packet.setDirection(SERVER_TO_CLIENT);
+		
+		if (socket.isClosed()) {
+			log.error("Socket has been closed. Exiting.");
+			client.disconnect(1);
+			return;
+		}
 		
 		byte[] data = new byte[LowLevelPacket.PACKET_SIZE];
 		DatagramPacket dp = new DatagramPacket(data, data.length);
@@ -124,7 +135,7 @@ public class PacketHandler {
 			
 			params.setPacketCounter(packet.getPacketID(), packet.getPacketType());
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Error reading low-level packet", e);
 		}
 	}
 	
@@ -140,6 +151,12 @@ public class PacketHandler {
 	public void sendLowLevel(LowLevelPacket packet) {
 		packet.setDirection(CLIENT_TO_SERVER);
 		
+		if (socket.isClosed()) {
+			log.error("Socket has been closed. Exiting.");
+			client.disconnect(1);
+			return;
+		}
+		
 		try (
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream dos = new DataOutputStream(bos)
@@ -147,8 +164,17 @@ public class PacketHandler {
 			packet.write(dos);
 			byte[] data = bos.toByteArray();
 			socket.send(new DatagramPacket(data, data.length, client.getHost(), client.getPort()));
+			
+			sendErrors = 0;
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Error sending low-level packet", e);
+			
+			sendErrors++;
+			
+			if (sendErrors >= SEND_ERROR_THRESHOLD) {
+				log.error("Reached threshold for packet send errors. Assuming connection lost. Exiting.");
+				client.disconnect(1);
+			}
 		}
 	}
 	

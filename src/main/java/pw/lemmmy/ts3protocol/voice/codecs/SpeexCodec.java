@@ -1,10 +1,12 @@
 package pw.lemmmy.ts3protocol.voice.codecs;
 
+import lombok.extern.slf4j.Slf4j;
 import org.xiph.speex.SpeexDecoder;
 import org.xiph.speex.SpeexEncoder;
 
 import java.io.StreamCorruptedException;
 
+@Slf4j
 public class SpeexCodec extends VoiceCodec {
 	private SpeexDecoder decoder;
 	private SpeexEncoder encoder;
@@ -39,7 +41,7 @@ public class SpeexCodec extends VoiceCodec {
 			decoder.getProcessedData(out, 0);
 			return out;
 		} catch (StreamCorruptedException e) {
-			e.printStackTrace();
+			log.error("Error decoding speex packet", e);
 		}
 		
 		return new byte[0];

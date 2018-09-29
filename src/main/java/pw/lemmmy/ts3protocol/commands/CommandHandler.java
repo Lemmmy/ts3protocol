@@ -1,5 +1,6 @@
 package pw.lemmmy.ts3protocol.commands;
 
+import lombok.extern.slf4j.Slf4j;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.packets.command.PacketCommand;
 
@@ -8,6 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 public class CommandHandler {
 	private Client client;
 	
@@ -41,8 +43,7 @@ public class CommandHandler {
 			try {
 				l.handle(command);
 			} catch (Exception e) {
-				System.err.println("Error in command handler for " + command.getName());
-				e.printStackTrace();
+				log.error("Error in command handler for {}", command.getName(), e);
 			}
 		});
 	}
