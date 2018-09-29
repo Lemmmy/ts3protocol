@@ -1,6 +1,7 @@
 package pw.lemmmy.ts3protocol.users;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import pw.lemmmy.ts3protocol.channels.Channel;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.commands.clients.CommandClientUpdate;
@@ -83,7 +84,7 @@ public class User {
 	/*
 	  TODO: this is the wrong property but its the only one that satisfies the needs for now
 	*/
-	public class ChannelID extends ShortProperty {{ name = "client_channel_group_inherited_channel_id"; }}
+	public class ChannelID extends ShortProperty {{ name = "ctid"; }}
 	
 	public class Description extends StringProperty {{ name = "client_description"; }}
 	public class Country extends StringProperty {{ name = "client_country"; }}
