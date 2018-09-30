@@ -27,4 +27,11 @@ public class UserPropertyManager extends PropertyManager {
 	protected boolean shouldReadCommand(Command command, Map<String, String> arguments) {
 		return arguments.containsKey("clid") && Short.parseShort(arguments.get("clid")) == clientID;
 	}
+	
+	@Override
+	public void flush() {
+		if (clientID != getClient().getID()) throw new RuntimeException("Can't update other user's properties");
+		
+		super.flush();
+	}
 }
