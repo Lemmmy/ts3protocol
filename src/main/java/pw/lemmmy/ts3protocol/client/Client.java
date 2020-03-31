@@ -1,22 +1,26 @@
 package pw.lemmmy.ts3protocol.client;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import pw.lemmmy.ts3protocol.commands.CommandHandler;
+import pw.lemmmy.ts3protocol.channels.Channel;
 import pw.lemmmy.ts3protocol.commands.CommandClientDisconnect;
+import pw.lemmmy.ts3protocol.commands.CommandHandler;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelListFinished;
 import pw.lemmmy.ts3protocol.commands.channels.CommandChannelSubscribeAll;
 import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientLeftView;
+import pw.lemmmy.ts3protocol.server.CodecEncryptionMode;
 import pw.lemmmy.ts3protocol.server.Server;
 import pw.lemmmy.ts3protocol.users.User;
+import pw.lemmmy.ts3protocol.utils.properties.PropertyManager;
 import pw.lemmmy.ts3protocol.voice.VoiceHandler;
 
-import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -47,6 +51,9 @@ public class Client extends User {
 	private Set<ClientReadyHandler> clientReadyHandlers = new HashSet<>();
 	
 	@Setter private String disconnectMessage;
+	
+	@Getter(AccessLevel.NONE)
+	private PropertyManager.ChangeListener<Boolean> channelCodecListener;
 	
 	public Client(Identity identity, InetAddress host) throws SocketException {
 		this(identity, host, DEFAULT_PORT);
@@ -85,6 +92,9 @@ public class Client extends User {
 				disconnect(1);
 			}
 		}));
+		
+		onChannelChanged(this::channelChanged);
+		server.getProps().addChangeListener(Server.VoiceEncryptionMode.class, c -> checkVoiceEncryption());
 	}
 	
 	public void run() {
@@ -109,7 +119,7 @@ public class Client extends User {
 		}
 	}
 	
-	public void clientConnected() {
+	void clientConnected() {
 		if (clientConnected) return;
 		clientConnected = true;
 		commandHandler.send(new CommandChannelSubscribeAll());
@@ -125,11 +135,47 @@ public class Client extends User {
 		}
 	}
 	
-	public void clientReady() {
+	private void clientReady() {
 		if (clientReady) return;
 		clientReady = true;
 		clientReadyHandlers.forEach(h -> h.handle(this));
 		clientReadyHandlers.clear();
+	}
+	
+	private void channelChanged(Channel oldChannel, Channel newChannel) {
+		if (oldChannel != null && channelCodecListener != null) // remove old channel codec listener, if it exists
+			oldChannel.getProps().removeChangeListener(Channel.CodecUnencrypted.class, channelCodecListener);
+		checkVoiceEncryption();
+		channelCodecListener = newChannel.getProps().addChangeListener(Channel.CodecUnencrypted.class, b -> checkVoiceEncryption());
+	}
+	
+	private void checkVoiceEncryption() {
+		boolean voiceEncrypted = isVoiceEncrypted();
+		Boolean outputAvailable = props.get(OutputAvailable.class);
+		
+		// update output status if it mismatches voice encryption status
+		if (outputAvailable == null || outputAvailable == voiceEncrypted) {
+			props.set(InputAvailable.class, !voiceEncrypted);
+			props.set(OutputAvailable.class, !voiceEncrypted);
+			props.flush();
+			
+			if (voiceEncrypted) log.error("Encrypted voice channels are not yet supported."); // TODO
+		}
+	}
+	
+	private boolean isVoiceEncrypted() {
+		CodecEncryptionMode mode = server.getProps().get(Server.VoiceEncryptionMode.class);
+		log.debug("Codec encryption mode: {}", mode);
+		if (mode == null || mode == CodecEncryptionMode.GLOBALLY_ON) return true;
+		
+		Optional<Channel> optChannel = getChannel();
+		log.debug("Has channel: {}", optChannel.isPresent());
+		if (!optChannel.isPresent()) return true;
+		Channel channel = optChannel.get();
+		
+		boolean channelCodecUnencrypted = channel.getProps().get(Channel.CodecUnencrypted.class);
+		log.debug("Channel codec unencrypted: {}", channelCodecUnencrypted);
+		return !channelCodecUnencrypted;
 	}
 	
 	public void disconnect() {

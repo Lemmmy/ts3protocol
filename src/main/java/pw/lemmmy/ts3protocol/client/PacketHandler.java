@@ -27,7 +27,7 @@ import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
 
 @Slf4j
 public class PacketHandler {
-	private static final long PING_INTERVAL = 5;
+	private static final long PING_INTERVAL = 3;
 	private static final int SEND_ERROR_THRESHOLD = 5;
 	
 	private Client client;
@@ -47,7 +47,10 @@ public class PacketHandler {
 	}
 	
 	protected void startPinging() {
-		pingFuture = Client.EXECUTOR.scheduleAtFixedRate(() -> send(new PacketPing()), PING_INTERVAL, PING_INTERVAL, TimeUnit.SECONDS);
+		pingFuture = Client.EXECUTOR.scheduleAtFixedRate(() -> {
+			log.trace("Sending ping");
+			send(new PacketPing());
+		}, PING_INTERVAL, PING_INTERVAL, TimeUnit.SECONDS);
 	}
 	
 	protected void stopPinging() { // TODO: deal with closing
@@ -73,6 +76,7 @@ public class PacketHandler {
 						send(new PacketAckLow(packet.getPacketID()));
 						break;
 					case PING:
+						log.trace("Received ping, sending pong " + packet.getPacketID());
 						send(new PacketPong(packet.getPacketID()));
 						break;
 				}

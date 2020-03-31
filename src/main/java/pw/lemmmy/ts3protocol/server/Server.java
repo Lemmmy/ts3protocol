@@ -123,7 +123,7 @@ public class Server {
 	public class ID extends IntProperty {{ name = "virtualserver_id"; }}
 	public class MaxClients extends IntProperty {{ name = "virtualserver_maxclients"; }}
 	
-	public class IP extends InetAddressProperty {{ name = "virtualserver_ip"; }}
+	public class IP extends InetAddressListProperty {{ name = "virtualserver_ip"; }}
 	public class Created extends DateProperty {{ name = "virtualserver_created"; }}
 	
 	public class DefaultServerGroupID extends IntProperty {{ name = "virtualserver_default_server_group"; }}
@@ -131,7 +131,7 @@ public class Server {
 	
 	public class DefaultTemporaryChannelDeleteDelay extends IntProperty {{ name = "virtualserver_channel_temp_delete_delay_default"; }}
 	
-	public class VoiceEncryptionMode extends EnumProperty<CodecEncryptionMode> {{ enumClass = CodecEncryptionMode.class; name = "virtualserver_created"; }}
+	public class VoiceEncryptionMode extends EnumProperty<CodecEncryptionMode> {{ enumClass = CodecEncryptionMode.class; name = "virtualserver_codec_encryption_mode"; }}
 	
 	public class PrioritySpeakerDimModifier extends DoubleProperty {{ name = "virtualserver_priority_speaker_dimm_modificator"; }}
 	

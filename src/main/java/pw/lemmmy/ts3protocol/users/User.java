@@ -1,7 +1,6 @@
 package pw.lemmmy.ts3protocol.users;
 
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import pw.lemmmy.ts3protocol.channels.Channel;
 import pw.lemmmy.ts3protocol.client.Client;
 import pw.lemmmy.ts3protocol.commands.clients.CommandClientUpdate;
@@ -11,12 +10,17 @@ import pw.lemmmy.ts3protocol.commands.clients.CommandNotifyClientUpdated;
 import pw.lemmmy.ts3protocol.server.Server;
 import pw.lemmmy.ts3protocol.utils.properties.*;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 @Getter
 public class User {
 	protected Server server;
+	private Channel channel = null;
 	public UserPropertyManager props;
+	
+	private Set<ChannelChangedHandler> channelChangedHandlers = new HashSet<>();
 	
 	private short id = 0;
 	
@@ -53,6 +57,13 @@ public class User {
 		);
 		
 		props.addChangeListener(ID.class, p -> setID(p.getValue().shortValue()));
+		props.addChangeListener(ChannelID.class, c -> {
+			Channel oldChannel = this.channel;
+			short cid = c.getValue();
+			Channel newChannel = server.getChannel(cid);
+			this.channel = newChannel;
+			channelChangedHandlers.forEach(h -> h.handle(oldChannel, newChannel));
+		});
 	}
 	
 	public short getID() {
@@ -66,10 +77,11 @@ public class User {
 	}
 	
 	public Optional<Channel> getChannel() {
-		if (props == null || props.get(ChannelID.class) == null) return Optional.empty();
-		short channelID = props.get(ChannelID.class);
-		if (channelID <= 0) return Optional.empty();
-		return Optional.ofNullable(server.getChannel(channelID));
+		return Optional.ofNullable(channel);
+	}
+	
+	public void onChannelChanged(ChannelChangedHandler handler) {
+		channelChangedHandlers.add(handler);
 	}
 	
 	public class Nickname extends StringProperty {{ name = "client_nickname"; }}
@@ -118,4 +130,9 @@ public class User {
 	public class ServerGroups extends StringProperty  {{ name = "client_servergroups"; }}
 	public class ChannelGroupID extends IntProperty  {{ name = "client_channel_group_id"; }}
 	public class ChannelGroupInheritedID extends IntProperty  {{ name = "client_channel_group_inherited_channel_id"; }}
+	
+	@FunctionalInterface
+	public interface ChannelChangedHandler {
+		void handle(Channel oldChannel, Channel newChannel);
+	}
 }

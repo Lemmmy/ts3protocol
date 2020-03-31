@@ -36,12 +36,18 @@ public class PropertyManager {
 		notifyCommands.forEach(n -> client.commandHandler.addCommandListener(n, this::readFromCommand));
 	}
 	
-	public <T> void addChangeListener(Class<? extends Property<T>> property, ChangeListener<T> listener) {
+	public <T> ChangeListener<T> addChangeListener(Class<? extends Property<T>> property, ChangeListener<T> listener) {
 		if (!changeListeners.containsKey(property)) {
 			changeListeners.put(property, new ArrayList<>());
 		}
 		
 		changeListeners.get(property).add(listener);
+		return listener;
+	}
+	
+	public <T> void removeChangeListener(Class<? extends Property<T>> property, ChangeListener<T> listener) {
+		if (!changeListeners.containsKey(property)) return;
+		changeListeners.get(property).remove(listener);
 	}
 	
 	public <T> T get(Class<? extends Property<T>> property) {
