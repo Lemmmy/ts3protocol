@@ -165,16 +165,13 @@ public class Client extends User {
 	
 	private boolean isVoiceEncrypted() {
 		CodecEncryptionMode mode = server.getProps().get(Server.VoiceEncryptionMode.class);
-		log.debug("Codec encryption mode: {}", mode);
 		if (mode == null || mode == CodecEncryptionMode.GLOBALLY_ON) return true;
 		
 		Optional<Channel> optChannel = getChannel();
-		log.debug("Has channel: {}", optChannel.isPresent());
 		if (!optChannel.isPresent()) return true;
 		Channel channel = optChannel.get();
 		
 		boolean channelCodecUnencrypted = channel.getProps().get(Channel.CodecUnencrypted.class);
-		log.debug("Channel codec unencrypted: {}", channelCodecUnencrypted);
 		return !channelCodecUnencrypted;
 	}
 	
