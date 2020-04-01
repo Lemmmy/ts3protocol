@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static org.fusesource.jansi.Ansi.ansi;
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.CLIENT_TO_SERVER;
 import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
 
@@ -29,6 +30,8 @@ import static pw.lemmmy.ts3protocol.packets.PacketDirection.SERVER_TO_CLIENT;
 public class PacketHandler {
 	private static final long PING_INTERVAL = 3;
 	private static final int SEND_ERROR_THRESHOLD = 5;
+	
+	private static final long TIMEOUT_MILLIS = 15000; // TODO: configurable
 	
 	private Client client;
 	private ConnectionParameters params;
@@ -38,7 +41,9 @@ public class PacketHandler {
 	
 	private ScheduledFuture<?> pingFuture;
 	
+	private boolean reading = false;
 	private int sendErrors = 0;
+	private long lastReceivedPing = -1;
 	
 	public PacketHandler(Client client) {
 		this.client = client;
@@ -48,6 +53,13 @@ public class PacketHandler {
 	
 	protected void startPinging() {
 		pingFuture = Client.EXECUTOR.scheduleAtFixedRate(() -> {
+			if (lastReceivedPing != -1 && System.currentTimeMillis() - lastReceivedPing > TIMEOUT_MILLIS) {
+				log.error(ansi().render("@|red Client timed out after {} ms. Disconnecting.|@").toString(), TIMEOUT_MILLIS);
+				pingFuture.cancel(false);
+				client.disconnect(1);
+				return;
+			}
+			
 			log.trace("Sending ping");
 			send(new PacketPing());
 		}, PING_INTERVAL, PING_INTERVAL, TimeUnit.SECONDS);
@@ -57,18 +69,30 @@ public class PacketHandler {
 		pingFuture.cancel(false);
 	}
 	
+	void disconnect() {
+		reading = false;
+	}
+	
 	void readLoop() {
 		List<LowLevelPacket> packets = new ArrayList<>(), fragmentedPackets = new ArrayList<>();
 		boolean fragmented = false;
 		
-		while (true) {
+		reading = true;
+		while (reading) {
 			try {
 				LowLevelPacket packet = new LowLevelPacket();
 				packet.setDirection(SERVER_TO_CLIENT);
 				receiveLowLevel(packet);
 				
+				PacketType type = packet.getPacketType();
+				if (type == null) {
+					log.error("Packet type was null - socket closed?");
+					reading = false;
+					break;
+				}
+				
 				// send corresponding acknowledgement packets. this has to be done during fragmentation, not HL parsing
-				switch (packet.getPacketType()) {
+				switch (type) {
 					case COMMAND:
 						send(new PacketAck(packet.getPacketID()));
 						break;
@@ -76,6 +100,7 @@ public class PacketHandler {
 						send(new PacketAckLow(packet.getPacketID()));
 						break;
 					case PING:
+						lastReceivedPing = System.currentTimeMillis();
 						log.trace("Received ping, sending pong " + packet.getPacketID());
 						send(new PacketPong(packet.getPacketID()));
 						break;

@@ -23,13 +23,16 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import static org.fusesource.jansi.Ansi.ansi;
 
 @Getter
 @Slf4j
 public class Client extends User {
-	public static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+	public static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(3);
 	
 	private static final short DEFAULT_PORT = 9987;
 	private static final int CONNECT_TIMEOUT_SECONDS = 5; // TODO: configurable
@@ -49,6 +52,9 @@ public class Client extends User {
 	private boolean clientConnected, clientReady;
 	private Set<ClientConnectedHandler> clientConnectedHandlers = new HashSet<>();
 	private Set<ClientReadyHandler> clientReadyHandlers = new HashSet<>();
+	
+	private Future<?> readLoopFuture;
+	private volatile boolean disconnecting = false;
 	
 	@Setter private String disconnectMessage;
 	
@@ -105,7 +111,7 @@ public class Client extends User {
 			}
 		}, CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 		
-		EXECUTOR.submit(() -> {
+		readLoopFuture = EXECUTOR.submit(() -> {
 			handshake.beginLowLevelHandshake();
 			packetHandler.readLoop();
 		});
@@ -159,7 +165,9 @@ public class Client extends User {
 			props.set(OutputAvailable.class, !voiceEncrypted);
 			props.flush();
 			
-			if (voiceEncrypted) log.error("Encrypted voice channels are not yet supported."); // TODO
+			if (voiceEncrypted) { // TODO
+				log.error(ansi().render("@|red Encrypted voice channels are not yet supported.|@").toString());
+			}
 		}
 	}
 	
@@ -180,6 +188,9 @@ public class Client extends User {
 	}
 	
 	public void disconnect(int code) {
+		if (disconnecting) return;
+		disconnecting = true;
+		
 		if (commandHandler != null) {
 			try {
 				commandHandler.send(new CommandClientDisconnect(disconnectMessage));
@@ -194,12 +205,25 @@ public class Client extends User {
 			}
 		}
 		
+		if (packetHandler != null) {
+			try {
+				packetHandler.disconnect();
+				if (readLoopFuture != null) readLoopFuture.cancel(true);
+			} catch (Exception e) {
+				log.error("Exception while trying to stop packet handler", e);
+			}
+		}
+		
 		if (socket != null && !socket.isClosed()) {
 			try {
 				socket.close();
 			} catch (Exception e) {
 				log.error("Exception while trying to disconnect", e);
 			}
+		}
+		
+		if (code != 0) {
+			log.error(ansi().render("@|red Client disconnected with error code |@@|bold,red {}|@").toString(), code);
 		}
 		
 		System.exit(code);
