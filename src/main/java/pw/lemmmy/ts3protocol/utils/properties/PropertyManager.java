@@ -64,6 +64,15 @@ public class PropertyManager {
 		return this;
 	}
 	
+	/**
+	 * Sets a property on the object. Run {@link #flush()} to synchronise the properties to the server, or if you are
+	 * only setting one property, you can use {@link #setInstantly(Class, Object)}.
+	 *
+	 * @param property The {@link Property} to set the value of. Must be a valid property of the destination object.
+	 * @param value The value to assign to the property.
+	 * @param <T> The type of the property.
+	 * @return This {@link PropertyManager} (for method chaining).
+	 */
 	public <T> PropertyManager set(Class<? extends Property<T>> property, T value) {
 		if (properties.containsKey(property)) {
 			((Property<T>) properties.get(property)).setValue(value);
@@ -78,6 +87,22 @@ public class PropertyManager {
 			}
 		}
 		
+		return this;
+	}
+	
+	/**
+	 * Sets a property on the object and immediately flushes it to the server.
+	 *
+	 * @param property The {@link Property} to set the value of. Must be a valid property of the destination object.
+	 * @param value The value to assign to the property.
+	 * @param <T> The type of the property.
+	 * @return This {@link PropertyManager} (for method chaining).
+	 *
+	 * @see #set(Class, Object)
+	 */
+	public <T> PropertyManager setInstantly(Class<? extends Property<T>> property, T value) {
+		set(property, value);
+		flush();
 		return this;
 	}
 	
