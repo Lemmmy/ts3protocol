@@ -8,8 +8,8 @@ import lombok.Getter;
 public class Version {
 	public static final Version DEFAULT_VERSION = new Version(
 		"Beta",
-		"3.5.1 [Build: 1584955996]",
-		"YtR6uJ0zzFwlAXoV1ikV8DVD9y7ka0WCh46wvALArdCBw9zaBLE7ese6Uu3U2Dmg4//ook5cNvupeOlzHcGPDQ==",
+		"3.5.2 [Build: 1585741147]",
+		"qILhBdVwjtE8enMjQL02b9i80CRybJgolFQWfQgLPjWLvgbNMeqAAFS+X7HB7FuF5VKq82biDYK2cuQJjTAbCw==",
 		"Linux"
 	); // TODO: load from Versions.csv
 	

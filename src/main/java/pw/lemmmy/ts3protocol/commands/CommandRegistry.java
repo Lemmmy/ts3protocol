@@ -2,6 +2,7 @@ package pw.lemmmy.ts3protocol.commands;
 
 import pw.lemmmy.ts3protocol.commands.channels.*;
 import pw.lemmmy.ts3protocol.commands.clients.*;
+import pw.lemmmy.ts3protocol.commands.errors.CommandError;
 import pw.lemmmy.ts3protocol.commands.handshake.*;
 import pw.lemmmy.ts3protocol.commands.messages.CommandNotifyTextMessage;
 import pw.lemmmy.ts3protocol.commands.messages.CommandSendTextMessage;
@@ -22,6 +23,9 @@ public class CommandRegistry {
 		commands.put("clientek", CommandClientEK::new);
 		commands.put("clientinit", CommandClientInit::new);
 		commands.put("initserver", CommandInitServer::new);
+		
+		// error
+		commands.put("error", CommandError::new);
 		
 		// clients
 		commands.put("clientmove", CommandClientMove::new);
