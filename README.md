@@ -1,3 +1,23 @@
+# ARCHIVED - NO LONGER IN DEVELOPMENT
+
+This project was originally a small hobby project of mine, mostly as a summer challenge, but also as the protocol driver for a very specific and purpose-built TeamSpeak bot. Our team has since moved platforms multiple times, so both the bot and protocol are no longer in development. 
+
+This project was built on the brilliant work of the [ReSpeak](https://github.com/ReSpeak) team, consider checking out their projects (which are still active!):
+
+* [ReSpeak/tsdeclarations](https://github.com/ReSpeak/tsdeclarations) - Protocol specification
+* [ReSpeak/tsclientlib](https://github.com/ReSpeak/tsclientlib) - Rust implementation of the protocol
+* [Splamy/TS3AudioBot](https://github.com/Splamy/TS3AudioBot) - C# implementation of the protocol
+
+For a more up-to-date Java protocol imlpementation, which was also based off of the ReSpeak team's work, and actually has some documentation and examples, consider checking out ts3j:
+
+* [Manevolent/ts3j](https://github.com/Manevolent/ts3j) - An open-source Java Teamspeak 3 client library using the TS3 full client protocol
+
+<hr />
+
+This library (Lemmmy/ts3protocol) will no longer receive updates or support, but anybody interested is more than welcome to fork it and continue its development. I apologise in advance that this was made solely for my own purposes, so the design of the library is not necessarily applicable to all applications, and there is no documentation.
+
+<hr />
+
 # ts3protocol
 
 This is a pure Java implementation of the TeamSpeak3 client protocol, designed for private in-server bots. 
