@@ -8,7 +8,7 @@ This project was built on the brilliant work of the [ReSpeak](https://github.com
 * [ReSpeak/tsclientlib](https://github.com/ReSpeak/tsclientlib) - Rust implementation of the protocol
 * [Splamy/TS3AudioBot](https://github.com/Splamy/TS3AudioBot) - C# implementation of the protocol
 
-For a more up-to-date Java protocol imlpementation, which was also based off of the ReSpeak team's work, and actually has some documentation and examples, consider checking out ts3j:
+For a more up-to-date Java protocol implementation, which was also based off of the ReSpeak team's work, and actually has some documentation and examples, consider checking out ts3j:
 
 * [Manevolent/ts3j](https://github.com/Manevolent/ts3j) - An open-source Java Teamspeak 3 client library using the TS3 full client protocol
 
